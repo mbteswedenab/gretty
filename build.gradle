@@ -1,13 +1,14 @@
 apply plugin: 'groovy'
 
 repositories {
-  mavenCentral ()
   mavenRepo urls: 'http://groovypp.artifactoryonline.com/groovypp/libs-releases-local/'
+  mavenCentral ()
   mavenRepo urls: 'http://repository.jboss.org/nexus/content/groups/public/'
 }
 
 dependencies {
     groovy group: 'org.mbte.groovypp', name: 'groovypp', version: '0.4.93'
+
     compile group: 'org.jboss.netty', name: 'netty', version: '3.2.1.Final'
     compile(group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.6.1')
     compile(group: 'org.codehaus.jackson', name: 'jackson-core-asl', version: '1.6.1')
