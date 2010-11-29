@@ -21,7 +21,7 @@ import javax.servlet.ServletConfig
 /**
  * Extension methods for classes of servlet framework
  */
-class ServletCategory {
+@Typed class ServletCategory {
     /**
      * Allows array-like syntax to access session attributes
      *
