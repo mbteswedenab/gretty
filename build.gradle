@@ -24,6 +24,9 @@ sourceSets {
         groovy {
             srcDir 'src'
         }
+        resources {
+            srcDirs 'src'
+        }
     }
 
     test {
