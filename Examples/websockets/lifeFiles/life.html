@@ -1,0 +1,74 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>Life Game</title>
+    <script type="text/javascript" src="/googlib/prototype/1.6.1/prototype.js"></script>
+    <script type="text/javascript" src="/js/pseudows.js"></script>
+    <script type="text/javascript" src="/life/js/life.js"></script>
+</head>
+<body onload="init()">
+    <div id="gameForm">
+        <center>
+            <table>
+                <tr>
+                    <td>
+                        <table style="background-color:aqua;" cellpadding="0" cellspacing="0" id="table">
+                        </table>
+                    </td>
+                    <td valign="top">
+                        <div style="display: none; background-color:#ee0000; padding:3px; padding-bottom: 5px; color:yellow;" id="supported"><span>Web sockets are not supported by your browser yet.</span><br/><span>We will emulate it with long polling.</span></div>
+                        <div id="loginForm" style="font-size:smaller; display:none;">
+                            <table>
+                                <tr>
+                                    <td align="right">Login</td>
+                                    <td><input type="text" id="userName"></td>
+                                </tr>
+                                <tr>
+                                    <td align="right">Password</td>
+                                    <td><input type="password" id="password"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" align="right">
+                                        <button onclick="onLogin()">Login</button>
+                                        <a href="#" onclick="showRegister()">Register</a>
+                                        <a href="#" onclick="cancelLogin()">Cancel</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div id="registerForm" style="display:none;">
+                            <table>
+                                <tr>
+                                    <td align="right">Login</td>
+                                    <td><input type="text" id="userName"></td>
+                                </tr>
+                                <tr>
+                                    <td align="right">Password</td>
+                                    <td><input type="password" id="password"></td>
+                                </tr>
+                                <tr>
+                                    <td align="right">Confirm Password</td>
+                                    <td><input type="password" id="confirmPassword"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" align="right">
+                                        <button onclick="onRegister()">Register</button>
+                                        <a href="#" onclick="showLogin()">Login</a>
+                                        <a href="#" onclick="cancelRegister()">Cancel</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <button onclick="startStop()" id="startStop">Start</button>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </center>
+    </div>
+</body>
+</html>
