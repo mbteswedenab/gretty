@@ -40,7 +40,7 @@ import org.jboss.netty.channel.ChannelFactory
 
     void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
         e.cause.printStackTrace()
-        super.exceptionCaught(ctx, e)
+        e.channel?.close()
     }
 
     protected void buildPipeline(ChannelPipeline pipeline) {

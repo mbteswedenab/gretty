@@ -25,6 +25,7 @@ import org.jboss.netty.channel.ChannelPipeline
 import org.jboss.netty.buffer.ChannelBuffer
 import org.jboss.netty.channel.Channel
 import org.jboss.netty.handler.codec.frame.FrameDecoder
+import org.jboss.netty.channel.ExceptionEvent
 
 @Typed class MapServer extends AbstractServer {
     final ConcurrentHashMap<String,byte[]> map = [:]
@@ -46,6 +47,10 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder
         Command msg = e.message
         msg.channel = ctx.channel
         msg.execute(map)
+    }
+
+    void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+        e.channel?.close()
     }
 
     static class CommandDecoder extends FrameDecoder {

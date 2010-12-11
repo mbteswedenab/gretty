@@ -42,17 +42,17 @@ if(args[0] == "server") {
 }
 else {
     if(args[0] == "client") {
-        def CL = 5
+        def CL = 500
         def pool = CallLaterExecutors.newCachedThreadPool()
         def factory = new NioClientSocketChannelFactory(pool, pool, 32)
         ResourcePool<MapClient> clients = [
-                executor: CallLaterExecutors.newCachedThreadPool(),
-                initResources: { (0..<30).map{
+                executor: CallLaterExecutors.newFixedThreadPool(100),
+                initResources: { (0..<90).map{
                     connectClient(factory)
                 }.asList() }
         ]
 
-        def N = 2000000
+        def N = 20000000
 
         if(CL == 1) {
             def client = connectClient()
@@ -66,7 +66,7 @@ else {
                 def bl = client.get(key)
                 bl.get()
 
-                assert new String((byte[])bl.get(), "UTF-8") == value
+//                assert new String((byte[])bl.get(), "UTF-8") == value
 
                 if(j % 10000 == 0) {
                     def e = System.currentTimeMillis() - start
@@ -86,27 +86,32 @@ else {
                 clients.execute { client ->
                     assert client
 
-                    def j = cur.getAndIncrement ()
+                    def j = cur.getAndAdd (500)
                     if(j >= N)
                         return
 
-                    def key = "foo$j"
-                    def value = "bar$j"
+                    for(l in 0..<500) {
+                        def jj = (j + l) % 250000
 
-                    client.set(key, value.getBytes("UTF-8"))
+                        def key = "foo$jj"
+                        def value = "bar$jj"
 
-                    def that = this
-                    client.get(key) { bl ->
-                        assert new String((byte[])bl.get(), "UTF-8") == value
+                        client.set(key, value.getBytes("UTF-8"))
 
-                        if(j % 10000 == 0) {
-                            def e = System.currentTimeMillis() - start
-                            println "$j ${(j * 1000L * 2) / e} ops"
+                        def that = this
+                        client.get(key) { bl ->
+                            assert new String((byte[])bl.get(), "UTF-8") == value
+
+                            if((j + l) % 10000 == 0) {
+                                def e = System.currentTimeMillis() - start
+                                println "${j+l} ${((j+l) * 1000L * 2) / e} ops"
+                            }
+
+                            cdl.countDown()
+
+                            if(l == 499)
+                                clients.execute that
                         }
-
-                        cdl.countDown()
-
-                        clients.execute that
                     }
                 }
             }
