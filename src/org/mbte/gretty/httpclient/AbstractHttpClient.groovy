@@ -28,8 +28,12 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse
 import org.mbte.gretty.httpserver.GrettyHttpResponse
 import org.jboss.netty.handler.codec.http.HttpVersion
+import org.jboss.netty.handler.codec.http.HttpResponse
+import groovypp.concurrent.BindLater
+import org.jboss.netty.handler.codec.http.HttpRequest
+import org.mbte.gretty.httpclient.AbstractHttpClientHandler
 
-@Typed class AbstractHttpClient extends AbstractClient {
+@Typed class AbstractHttpClient extends AbstractClient implements AbstractHttpClientHandler {
     AbstractHttpClient(SocketAddress remoteAddress, ChannelFactory factory = null) {
         super(remoteAddress, factory)
     }

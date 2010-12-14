@@ -40,7 +40,7 @@ import org.jboss.netty.handler.codec.http.HttpMessage
         this.id = id
     }
 
-    protected void onConnect() {
+    void onConnect() {
         for (;;) {
             def s = state
             if(s.connected)
@@ -55,11 +55,11 @@ import org.jboss.netty.handler.codec.http.HttpMessage
         }
     }
 
-    protected void onDisconnect() {
+    void onDisconnect() {
         proxy.onDisconnect(this)
     }
 
-    protected void onConnectFailed(Throwable cause) {
+    void onConnectFailed(Throwable cause) {
         proxy.onDisconnect(this)
     }
 

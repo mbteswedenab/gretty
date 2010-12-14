@@ -17,6 +17,8 @@
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.*
+import org.jboss.netty.handler.codec.base64.Base64
+import org.jboss.netty.buffer.ChannelBuffers
 
 @Typed class GrettyHttpRequest extends DefaultHttpRequest {
 
@@ -50,5 +52,13 @@ import org.jboss.netty.handler.codec.http.*
     
     String getContentText () {
         new String(content.array(), content.arrayOffset(), content.readableBytes())
+    }
+
+    void setAuthorization (String user, String password) {
+        def line = "$user:$password"
+        def cb = ChannelBuffers.wrappedBuffer(line.bytes)
+        cb = Base64.encode(cb)
+        line = new String(cb.array(), cb.arrayOffset(), cb.readableBytes())
+        setHeader(HttpHeaders.Names.AUTHORIZATION, "Basic $line")
     }
 }

@@ -24,8 +24,9 @@ import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory
 import java.util.concurrent.Executors
 import org.jboss.netty.channel.local.LocalClientChannelFactory
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory
+import org.mbte.gretty.httpclient.AbstractClientHandler
 
-@Typed class AbstractClient extends SimpleChannelHandler implements ChannelPipelineFactory {
+@Typed class AbstractClient extends SimpleChannelHandler implements ChannelPipelineFactory, AbstractClientHandler {
     protected Channel channel
 
     protected final SocketAddress remoteAddress
@@ -109,6 +110,7 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory
 
     void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
         ctx.channel.close ()
+        onException e.cause
     }
 
     void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
@@ -121,12 +123,6 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory
     void disconnect() {
         channel?.close()
     }
-
-    protected void onConnect () {}
-
-    protected void onConnectFailed (Throwable cause) {}
-
-    protected void onDisconnect () {}
 
     ChannelPipeline getPipeline () {
         def pipeline = Channels.pipeline()

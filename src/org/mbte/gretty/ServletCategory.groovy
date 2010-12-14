@@ -17,6 +17,8 @@ package org.mbte.gretty
 
 import javax.servlet.http.HttpSession
 import javax.servlet.ServletConfig
+import org.jboss.netty.buffer.ChannelBuffer
+import org.jboss.netty.buffer.ChannelBuffers
 
 /**
  * Extension methods for classes of servlet framework
@@ -76,5 +78,13 @@ import javax.servlet.ServletConfig
      */
     static String getUnresolvedProperty(ServletConfig config, String name) {
         config.getInitParameter(name)
+    }
+
+    static String asString(ChannelBuffer cb) {
+        new String(cb.array(), cb.arrayOffset(), cb.readableBytes(), "UTF-8")
+    }
+
+    static ChannelBuffer asChannelBuffer(String str) {
+        ChannelBuffers.copiedBuffer(str, "UTF-8")
     }
 }

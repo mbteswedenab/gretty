@@ -98,11 +98,11 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../groovypp/out/groovypp-0.4.97.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp/jars/groovypp-0.4.98.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="file://$MODULE_DIR$/../groovypp/Compiler/src" />
+          <root url="file://$MODULE_DIR$/../groovypp/StdLib/src" />
         </SOURCES>
       </library>
     </orderEntry>
