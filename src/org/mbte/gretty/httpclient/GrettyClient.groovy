@@ -27,6 +27,11 @@ import org.jboss.netty.channel.MessageEvent
 
 import org.mbte.gretty.httpserver.GrettyHttpResponse
 import org.jboss.netty.channel.ChannelFactory
+import org.jboss.netty.channel.ChildChannelStateEvent
+import org.jboss.netty.handler.codec.http.HttpResponseStatus
+import org.jboss.netty.channel.ChannelStateEvent
+import org.jboss.netty.channel.ExceptionEvent
+import java.util.concurrent.Executor
 
 @Typed class GrettyClient extends AbstractHttpClient {
 
@@ -43,12 +48,27 @@ import org.jboss.netty.channel.ChannelFactory
         later
     }
 
-    void request(HttpRequest request, BindLater.Listener<GrettyHttpResponse> action) {
-        assert pendingRequest.compareAndSet(null, new BindLater().whenBound(action))
+    void request(HttpRequest request, Executor executor = null, BindLater.Listener<GrettyHttpResponse> action) {
+        assert pendingRequest.compareAndSet(null, new BindLater().whenBound(executor, action))
         channel.write(request)
     }
 
     void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
-        pendingRequest.getAndSet(null).set((GrettyHttpResponse)e.message)
+        def pending = pendingRequest.getAndSet(null)
+        pending.set((GrettyHttpResponse)e.message)
+    }
+
+    void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        def pending = pendingRequest.getAndSet(null)
+        pending?.set(null)
+
+        super.channelClosed(ctx, e)
+    }
+
+    @Override
+    void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+        def pending = pendingRequest.getAndSet(null)
+        pending?.setException(e.cause)
+        channel?.close()
     }
 }

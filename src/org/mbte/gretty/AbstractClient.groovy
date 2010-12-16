@@ -27,7 +27,7 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory
 import org.mbte.gretty.httpclient.AbstractClientHandler
 
 @Typed class AbstractClient extends SimpleChannelHandler implements ChannelPipelineFactory, AbstractClientHandler {
-    protected Channel channel
+    protected volatile Channel channel
 
     protected final SocketAddress remoteAddress
 
@@ -79,6 +79,7 @@ import org.mbte.gretty.httpclient.AbstractClientHandler
                 returnFuture.setSuccess()
             }
             else {
+               channel = null
                future.channel.close ()
                try {
                    onConnectFailed (future.cause)

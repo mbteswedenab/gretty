@@ -98,17 +98,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp/jars/groovypp-0.4.98.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../groovypp/StdLib/src" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$USER_HOME$/.gradle/cache/org.codehaus.groovy/groovy/jars/groovy-1.7.5.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -190,6 +179,18 @@
         <JAVADOC />
         <SOURCES>
           <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/sources/junit-4.8.1-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../groovypp/out/groovypp-0.4.97.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../groovypp/StdLib/src" />
+          <root url="file://$MODULE_DIR$/../groovypp/Compiler/src" />
         </SOURCES>
       </library>
     </orderEntry>

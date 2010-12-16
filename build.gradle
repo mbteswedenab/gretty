@@ -19,7 +19,7 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'org.mbte.groovypp'
-version = '0.4.98'
+version = '0.4.101'
 
 repositories {
   mavenRepo urls: 'http://groovypp.artifactoryonline.com/groovypp/libs-releases-local/'
