@@ -50,15 +50,36 @@ import org.jboss.netty.buffer.ChannelBuffers
         params
     }
     
+    void setParameters(Map<String,String> params) {
+//        def encoder = new QueryStringEncoder(decoder.path)
+//        for(param in params) {
+//            encoder.addParam param.key, v
+//        }
+    }
+
     String getContentText () {
         new String(content.array(), content.arrayOffset(), content.readableBytes())
     }
 
-    void setAuthorization (String user, String password) {
+    GrettyHttpRequest setAuthorization (String user, String password) {
         def line = "$user:$password"
         def cb = ChannelBuffers.wrappedBuffer(line.bytes)
         cb = Base64.encode(cb)
         line = new String(cb.array(), cb.arrayOffset(), cb.readableBytes())
         setHeader(HttpHeaders.Names.AUTHORIZATION, "Basic $line")
+        this
+    }
+
+    GrettyHttpRequest keepAlive () {
+        setHeader HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE
+        this
+    }
+
+    GrettyHttpRequest cookies (Map<String,String> cookies) {
+        def encoder = new CookieEncoder(false)
+        for(e in cookies.entrySet())
+            encoder.addCookie(e.key, e.value)
+        setHeader(HttpHeaders.Names.COOKIE, encoder.encode())
+        this
     }
 }
