@@ -32,35 +32,78 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus
 import org.jboss.netty.channel.ChannelStateEvent
 import org.jboss.netty.channel.ExceptionEvent
 import java.util.concurrent.Executor
+import org.jboss.netty.handler.codec.http.HttpHeaders
+import org.mbte.gretty.httpserver.GrettyHttpRequest
+import org.jboss.netty.handler.codec.http.CookieDecoder
+import org.jboss.netty.handler.codec.http.Cookie
+import org.jboss.netty.handler.codec.http.CookieEncoder
 
 @Typed class GrettyClient extends AbstractHttpClient {
 
-    private volatile BindLater<HttpResponse> pendingRequest
+    protected volatile Pair<GrettyHttpRequest, BindLater<HttpResponse>> pendingRequest
 
     GrettyClient(SocketAddress remoteAddress, ChannelFactory factory = null) {
         super(remoteAddress, factory)
     }
 
-    BindLater<HttpResponse> request(HttpRequest request) {
-        def later = new BindLater()
-        assert pendingRequest.compareAndSet(null, later)
+    BindLater<HttpResponse> request(GrettyHttpRequest request, BindLater<HttpResponse> later = null, boolean followRedirects = false) {
+        later = later ?: new BindLater()
+        assert pendingRequest.compareAndSet(null, [request, later])
         channel.write(request)
-        later
+        return later
     }
 
-    void request(HttpRequest request, Executor executor = null, BindLater.Listener<GrettyHttpResponse> action) {
-        assert pendingRequest.compareAndSet(null, new BindLater().whenBound(executor, action))
+    void request(GrettyHttpRequest request, Executor executor = null, boolean followRedirects = false, BindLater.Listener<GrettyHttpResponse> action) {
+        assert pendingRequest.compareAndSet(null, [request, new BindLater().whenBound(executor, action)])
         channel.write(request)
     }
 
     void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
+        GrettyHttpResponse resp = e.message
         def pending = pendingRequest.getAndSet(null)
-        pending.set((GrettyHttpResponse)e.message)
+        if(resp.status == HttpResponseStatus.FOUND || resp.status == HttpResponseStatus.MOVED_PERMANENTLY) {
+            URL url = [resp.getHeader(HttpHeaders.Names.LOCATION)]
+
+            def redirectAddress = new InetSocketAddress(url.host, url.port != -1 ? url.port : 80)
+            def req = pending.first
+            req.uri = "$url.path${url.query ? '?' + url.query : ''}"
+            if(req.uri == '/')
+                req.uri = ''
+            def cookies = resp.getHeaders(HttpHeaders.Names.SET_COOKIE)
+            if(cookies) {
+                def oldCookies = req.getHeaders(HttpHeaders.Names.COOKIE)
+                Set<Cookie> newCookies = []
+                for(oldCookie in oldCookies) {
+                    newCookies.addAll(new CookieDecoder().decode(oldCookie))
+                }
+                req.removeHeader(HttpHeaders.Names.COOKIE)
+                for(cookie in cookies) {
+                    newCookies.addAll(new CookieDecoder().decode(cookie))
+                }
+                for(newCookie in newCookies) {
+                    def encoder = new CookieEncoder(false)
+                    encoder.addCookie newCookie
+                    req.addHeader(HttpHeaders.Names.COOKIE, encoder.encode())
+                }
+            }
+            if(redirectAddress != remoteAddress) {
+                GrettyClient redirectClient = [redirectAddress, channelFactory]
+                redirectClient.connect() { future ->
+                    redirectClient.request req, pending.second, true
+                }
+            }
+            else {
+                request(req, pending.second, true)
+            }
+        }
+        else {
+            pending.second.set(resp)
+        }
     }
 
     void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
         def pending = pendingRequest.getAndSet(null)
-        pending?.set(null)
+        pending?.second?.set(null)
 
         super.channelClosed(ctx, e)
     }
@@ -68,7 +111,7 @@ import java.util.concurrent.Executor
     @Override
     void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
         def pending = pendingRequest.getAndSet(null)
-        pending?.setException(e.cause)
+        pending?.second?.setException(e.cause)
         channel?.close()
     }
 }
