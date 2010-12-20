@@ -28,7 +28,7 @@ import org.jboss.netty.handler.codec.http.HttpVersion
         GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, ""]
         req.keepAlive()
 
-        client.request(req, null, true).get()
+        client.request(req).get()
     }
 
     void testGoogle2 () {
@@ -38,7 +38,7 @@ import org.jboss.netty.handler.codec.http.HttpVersion
         GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/"]
         req.keepAlive()
 
-        client.request(req, null, true).get()
+        client.request(req).get()
     }
 
     void testMicrosoft () {
@@ -48,6 +48,6 @@ import org.jboss.netty.handler.codec.http.HttpVersion
         GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/"]
         req.keepAlive()
 
-        client.request(req, null, true).get()
+        client.request(req).get()
     }
 }

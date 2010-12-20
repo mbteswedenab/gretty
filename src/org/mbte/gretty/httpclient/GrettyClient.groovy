@@ -46,22 +46,24 @@ import org.jboss.netty.handler.codec.http.CookieEncoder
         super(remoteAddress, factory)
     }
 
-    BindLater<HttpResponse> request(GrettyHttpRequest request, BindLater<HttpResponse> later = null, boolean followRedirects = false) {
-        later = later ?: new BindLater()
+    BindLater<HttpResponse> request(GrettyHttpRequest request) {
+        requestInternal request, []
+    }
+
+    void request(GrettyHttpRequest request, Executor executor = null, BindLater.Listener<GrettyHttpResponse> action) {
+        requestInternal request, new BindLater().whenBound(executor, action)
+    }
+
+    private BindLater<HttpResponse> requestInternal (GrettyHttpRequest request, BindLater later) {
         assert pendingRequest.compareAndSet(null, [request, later])
         channel.write(request)
         return later
     }
 
-    void request(GrettyHttpRequest request, Executor executor = null, boolean followRedirects = false, BindLater.Listener<GrettyHttpResponse> action) {
-        assert pendingRequest.compareAndSet(null, [request, new BindLater().whenBound(executor, action)])
-        channel.write(request)
-    }
-
     void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
         GrettyHttpResponse resp = e.message
         def pending = pendingRequest.getAndSet(null)
-        if(resp.status == HttpResponseStatus.FOUND || resp.status == HttpResponseStatus.MOVED_PERMANENTLY) {
+        if(pending.first.followRedirects() && resp.status == HttpResponseStatus.FOUND || resp.status == HttpResponseStatus.MOVED_PERMANENTLY) {
             URL url = [resp.getHeader(HttpHeaders.Names.LOCATION)]
 
             def redirectAddress = new InetSocketAddress(url.host, url.port != -1 ? url.port : 80)
@@ -89,11 +91,11 @@ import org.jboss.netty.handler.codec.http.CookieEncoder
             if(redirectAddress != remoteAddress) {
                 GrettyClient redirectClient = [redirectAddress, channelFactory]
                 redirectClient.connect() { future ->
-                    redirectClient.request req, pending.second, true
+                    redirectClient.requestInternal req, pending.second
                 }
             }
             else {
-                request(req, pending.second, true)
+                requestInternal(req, pending.second)
             }
         }
         else {

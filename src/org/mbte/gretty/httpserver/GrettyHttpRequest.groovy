@@ -24,6 +24,7 @@ import org.jboss.netty.buffer.ChannelBuffers
 
     private String path
     private Map<String, List<String>> params
+    private boolean followRedirects = false
 
     public GrettyHttpRequest(HttpVersion httpVersion = HttpVersion.HTTP_1_1, HttpMethod method = HttpMethod.GET, String uri) {
         super(httpVersion, method, uri)
@@ -81,5 +82,14 @@ import org.jboss.netty.buffer.ChannelBuffers
             encoder.addCookie(e.key, e.value)
         setHeader(HttpHeaders.Names.COOKIE, encoder.encode())
         this
+    }
+
+    GrettyHttpRequest followRedirects (boolean follow) {
+        followRedirects = follow
+        this
+    }
+
+    boolean followRedirects () {
+        followRedirects
     }
 }

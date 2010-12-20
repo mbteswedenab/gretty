@@ -27,6 +27,7 @@ import java.util.concurrent.Executor
 import groovypp.concurrent.BindLater
 import org.mbte.gretty.httpserver.GrettyHttpResponse
 import org.jboss.netty.handler.codec.http.HttpRequest
+import org.mbte.gretty.httpserver.GrettyHttpRequest
 
 @Typed abstract class LoadGenerator extends ExecutingChannel {
     SocketAddress remoteAddress
@@ -117,7 +118,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest
     static class LoadClient extends ExecutingChannel implements org.mbte.gretty.httpclient.AbstractHttpClientHandler<GrettyClient> {
         int id
 
-        void request(HttpRequest request, Function1<GrettyHttpResponse,?> action) {
+        void request(GrettyHttpRequest request, Function1<GrettyHttpResponse,?> action) {
             client.request(request){ responseBindLater ->
                 schedule {
                     action(responseBindLater.get())

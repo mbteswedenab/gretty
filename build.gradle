@@ -19,7 +19,7 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'org.mbte.groovypp'
-version = '0.4.104'
+version = '0.4.105'
 
 def gppVersion = '0.4.101'
 
