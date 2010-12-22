@@ -27,13 +27,13 @@ import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.HttpHeaders
 import org.jboss.netty.handler.codec.http.DefaultHttpResponse
 import org.codehaus.groovy.reflection.ReflectionCache
-import org.objectweb.asm.Opcodes
 import org.jboss.netty.channel.Channel
 import org.jboss.netty.channel.ChannelFutureListener
 import org.jboss.netty.handler.codec.http.HttpVersion
 import org.jboss.netty.handler.stream.ChunkedStream
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer
+import java.lang.reflect.Modifier
 
 @Typed class GrettyHttpResponse extends DefaultHttpResponse {
 
@@ -197,7 +197,7 @@ import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer
                 def list = clazz.fields.toList()
                 def first = true
                 for(f in list) {
-                    if((f.modifiers & (Opcodes.ACC_STATIC|Opcodes.ACC_TRANSIENT)))
+                    if((f.modifiers & (Modifier.STATIC|Modifier.TRANSIENT)))
                         continue
                     if(!first) {
                         sb << ','
