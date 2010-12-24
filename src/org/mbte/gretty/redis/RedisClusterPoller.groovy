@@ -46,8 +46,8 @@ import groovypp.channels.SupervisedChannel
     private void poll() {
         if(!stopped()) {
             def resultList = jedis.pipelined {
-                client.setex ownerIdKey, 15, owner.id
-                client.keys CLUSTER_ID_PATTERN
+                setex ownerIdKey, 15, owner.id
+                keys CLUSTER_ID_PATTERN
             }
 
             owner.onClusterStatus( ((List<String>)resultList[1])*.substring(11) )
