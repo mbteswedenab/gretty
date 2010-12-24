@@ -37,6 +37,7 @@ import org.mbte.gretty.httpserver.GrettyHttpRequest
 import org.jboss.netty.handler.codec.http.CookieDecoder
 import org.jboss.netty.handler.codec.http.Cookie
 import org.jboss.netty.handler.codec.http.CookieEncoder
+import java.nio.channels.ClosedChannelException
 
 @Typed class GrettyClient extends AbstractHttpClient {
 
@@ -105,7 +106,7 @@ import org.jboss.netty.handler.codec.http.CookieEncoder
 
     void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
         def pending = pendingRequest.getAndSet(null)
-        pending?.second?.set(null)
+        pending?.second?.setException(new ClosedChannelException())
 
         super.channelClosed(ctx, e)
     }
