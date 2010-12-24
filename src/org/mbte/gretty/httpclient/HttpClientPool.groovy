@@ -17,14 +17,13 @@
 package org.mbte.gretty.httpclient
 
 import groovypp.channels.ExecutingChannel
-import org.mbte.gretty.httpserver.GrettyHttpResponse
-import org.jboss.netty.handler.codec.http.HttpRequest
 import org.jboss.netty.channel.ChannelFactory
 import java.util.concurrent.Executors
 import org.jboss.netty.channel.local.LocalAddress
 import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory
 import groovypp.concurrent.ResourcePool
+import java.util.concurrent.Executor
 
 @Typed abstract class HttpClientPool extends ResourcePool<GrettyClient> {
     SocketAddress remoteAddress
@@ -35,19 +34,15 @@ import groovypp.concurrent.ResourcePool
 
     int maxClientsConnectingConcurrently = 50
 
-    protected int connectingClients
+    protected volatile int connectingClients
 
-    protected int connectedClients
-
-    private ExecutingChannel lock = new ExecutingChannel(){}
+    protected volatile int connectedClients
 
     Iterable<GrettyClient> initResources() {
         assert remoteAddress
 
         if(!executor)
             executor = Executors.newFixedThreadPool(Runtime.runtime.availableProcessors() * 4)
-
-        lock.executor = executor
 
         if(!channelFactory) {
             if(remoteAddress instanceof LocalAddress) {
@@ -58,7 +53,7 @@ import groovypp.concurrent.ResourcePool
             }
         }
 
-        lock.schedule {
+        executor.execute {
             attemptToConnect()
         }
 
@@ -66,49 +61,47 @@ import groovypp.concurrent.ResourcePool
     }
 
     private void attemptToConnect () {
-        if(connectedClients + connectingClients >= clientsNumber)
+        def connecting = connectingClients.incrementAndGet()
+        if(connecting >= maxClientsConnectingConcurrently || connecting + connectedClients > clientsNumber) {
+            connectingClients.decrementAndGet()
             return
+        }
 
-        if(connectingClients < maxClientsConnectingConcurrently) {
-            connectingClients++
+        GrettyClient httpClient = [remoteAddress, channelFactory]
+        httpClient.adapter = [
+            onConnect: {
+                connectingClients.decrementAndGet ()
+                connectedClients.incrementAndGet()
+                add(httpClient)
+                executor.execute {
+                    attemptToConnect()
+                }
+            },
 
-            GrettyClient httpClient = [remoteAddress, channelFactory]
+            onConnectFailed: { cause ->
+                connectingClients.decrementAndGet ()
+                connectedClients.incrementAndGet () // onDisconnect will decrease
+                executor.execute {
+                    attemptToConnect()
+                }
+            },
 
-            httpClient.adapter = [
-                onConnect: {
-                    lock.schedule {
-                        connectedClients++
-                        connectingClients--
-                        add(httpClient)
-                        attemptToConnect()
-                    }
-                },
-
-                onConnectFailed: { cause ->
-                    lock.schedule {
-                        connectingClients--
-                        connectedClients++  // onDisconnect will decrease
-                        attemptToConnect()
-                    }
-                },
-
-                onDisconnect: {
-                    lock.schedule {
-                        connectedClients--
-                        attemptToConnect()
-                    }
-                },
-            ]
-            httpClient.connect { future ->
-                lock.schedule {
-
+            onDisconnect: {
+                connectedClients.decrementAndGet ()
+                executor.execute {
+                    attemptToConnect()
                 }
             }
+        ]
+        httpClient.connect()
 
-            lock.schedule {
-                attemptToConnect()
-            }
+        executor.execute {
+            attemptToConnect()
         }
+    }
+
+    boolean isResourceAlive(GrettyClient resource) {
+        resource.connected
     }
 
     int getConnectingClients () { connectingClients }
