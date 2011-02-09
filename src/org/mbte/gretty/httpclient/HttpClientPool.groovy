@@ -26,7 +26,7 @@ import groovypp.concurrent.ResourcePool
 import java.util.concurrent.Executor
 
 @Typed abstract class HttpClientPool extends ResourcePool<GrettyClient> {
-    SocketAddress remoteAddress
+    SocketAddress remoteAddress, localAddress
 
     ChannelFactory channelFactory
 
@@ -68,6 +68,7 @@ import java.util.concurrent.Executor
         }
 
         GrettyClient httpClient = [remoteAddress, channelFactory]
+        httpClient.localAddress = localAddress
         httpClient.adapter = [
             onConnect: {
                 connectingClients.decrementAndGet ()
