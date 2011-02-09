@@ -21,10 +21,23 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp/jars/groovypp-0.4.101.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp/jars/groovypp-0.4.115.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp/sources/groovypp-0.4.115-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/jars/junit-4.8.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/sources/junit-4.8.1-sources.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
@@ -150,22 +163,22 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/redis.clients/jedis/jars/jedis-1.3.0.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/redis.clients/jedis/jars/jedis-1.5.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/cache/redis.clients/jedis/sources/jedis-1.3.0-sources.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/redis.clients/jedis/sources/jedis-1.5.0-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/jars/junit-4.8.1.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/commons-pool/commons-pool/jars/commons-pool-1.5.5.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/sources/junit-4.8.1-sources.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/commons-pool/commons-pool/sources/commons-pool-1.5.5-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>

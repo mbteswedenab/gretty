@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../gradle-0.9-rc-3/lib" />
+      <root url="file://$PROJECT_DIR$/../../gradle-0.9-rc-3/lib" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$PROJECT_DIR$/../../gradle-0.9-rc-3/lib" recursive="false" />
+  </library>
+</component>
