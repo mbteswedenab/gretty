@@ -31,6 +31,8 @@ import org.mbte.gretty.httpclient.AbstractClientHandler
 
     protected final SocketAddress remoteAddress
 
+    SocketAddress localAddress
+
     protected final ChannelFactory channelFactory
     protected final boolean shouldReleaseResources = true
 
@@ -62,7 +64,7 @@ import org.mbte.gretty.httpclient.AbstractClientHandler
         bootstrap.setOption("tcpNoDelay", true)
         bootstrap.setOption("keepAlive",  true)
 
-        def connectFuture = bootstrap.connect(remoteAddress)
+        def connectFuture = bootstrap.connect(remoteAddress, localAddress)
         channel = connectFuture.channel
 
         def returnFuture = Channels.future(channel)
