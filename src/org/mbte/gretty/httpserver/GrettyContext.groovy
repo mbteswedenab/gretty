@@ -154,7 +154,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod
         if(uri.startsWith('/'))
             uri = uri.substring(1)
 
-        def url = staticResourcesClassLoader.getResource("$staticResources/$uri")
+        def url = staticResourcesClassLoader.getResource("WEB-INF/$staticResources/$uri")
         if(!url)
             return null
 
