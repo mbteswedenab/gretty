@@ -30,12 +30,17 @@ import java.util.concurrent.atomic.AtomicInteger
     private GrettyServer server
 
     protected void setUp() {
+        def random = new Random ()
         server = [
     localAddress: new InetSocketAddress(InetAddress.localHost.hostName, 8080),
 
     webContexts: [
         "/ping" : [
             default: {
+                if(random.nextInt(1000) < 200) {
+                    response.channel.close ()
+                    return
+                }
                 response.html = """
 <html>
     <head>
@@ -64,10 +69,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
             maxClientsConnectingConcurrently: 10,
 
-            clientsNumber: 100
+            clientsNumber: 250
         ]
 
-        def cdl = new CountDownLatch(100*10)
+        def cdl = new CountDownLatch(500*100)
 
         def printStat = { String reason ->
             synchronized(cdl) { // does not really matter on what to sync
@@ -75,16 +80,12 @@ import java.util.concurrent.atomic.AtomicInteger
             }
         }
 
-        for(i in 0..<100) {
-            AtomicInteger iterations = [10]
+        AtomicInteger jobsCompleted = [0]
+        for(i in 0..<500) {
+            AtomicInteger iterations = [100]
+
             load.allocateResource { grettyClient ->
                 ResourcePool.Allocate  withClient = this
-
-                if(!grettyClient.connected) {
-                    load.releaseResource grettyClient
-                    load.allocateResource withClient
-                    return
-                }
 
                 GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/ping"]
                 req.setHeader HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE
@@ -95,38 +96,31 @@ import java.util.concurrent.atomic.AtomicInteger
                             if(response?.status != HttpResponseStatus.OK) {
                                 printStat "C$i: response ${response?.status}"
 
-                                load.executor.execute {
-                                    withClient(grettyClient)
-                                }
+                                load.repeat grettyClient, withClient
                             }
                             else {
                                 printStat "C$i: iteration ${iterations.get()} completed ${response.status}"
                                 cdl.countDown ()
 
                                 if(iterations.decrementAndGet() > 0) {
-                                    load.executor.execute {
-                                        withClient(grettyClient)
-                                    }
+                                    load.repeat grettyClient, withClient
                                 }
                                 else {
-                                    printStat "C$i: job completed"
-                                    // we don't disconnect channel here with purpose
-                                    // otherwise new one will appear in the pool
+                                    printStat "C$i: job completed ${jobsCompleted.incrementAndGet()}"
+                                    load.releaseResource grettyClient
                                 }
                             }
                         }
                         catch(e) {
                             printStat "C$i: $e"
                             // we need to retry with new client
-                            load.releaseResource grettyClient
-                            load.allocateResource withClient
+                            load.repeat grettyClient, withClient
                         }
                     }
                 }
                 catch(e) {
                     // we need to retry with new client
-                    load.releaseResource grettyClient
-                    load.allocateResource withClient
+                    load.repeat grettyClient, withClient
                 }
             }
         }

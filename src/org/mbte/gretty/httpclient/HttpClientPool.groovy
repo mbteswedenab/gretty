@@ -24,6 +24,8 @@ import org.jboss.netty.channel.local.DefaultLocalClientChannelFactory
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory
 import groovypp.concurrent.ResourcePool
 import java.util.concurrent.Executor
+import org.jboss.netty.channel.group.DefaultChannelGroup
+import org.jboss.netty.util.internal.ExecutorUtil
 
 @Typed abstract class HttpClientPool extends ResourcePool<GrettyClient> {
     SocketAddress remoteAddress, localAddress
@@ -34,30 +36,44 @@ import java.util.concurrent.Executor
 
     int maxClientsConnectingConcurrently = 50
 
+    int ioThreads = Runtime.runtime.availableProcessors() * 2
+
+    int workerThreads = Runtime.runtime.availableProcessors() * 2
+
     protected volatile int connectingClients
 
     protected volatile int connectedClients
+
+    protected Executor connectExecutor = Executors.newFixedThreadPool(Runtime.runtime.availableProcessors())
+
+    private DefaultChannelGroup allConnected = []
 
     Iterable<GrettyClient> initResources() {
         assert remoteAddress
 
         if(!executor)
-            executor = Executors.newFixedThreadPool(Runtime.runtime.availableProcessors() * 4)
+            executor = Executors.newFixedThreadPool(workerThreads)
 
         if(!channelFactory) {
             if(remoteAddress instanceof LocalAddress) {
                 channelFactory = new DefaultLocalClientChannelFactory()
             }
             else {
-                channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool())
+                channelFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), ioThreads)
             }
         }
 
-        executor.execute {
-            attemptToConnect()
-        }
+        for(ioThreads in 0..<maxClientsConnectingConcurrently)
+            connectExecutor.execute {
+                attemptToConnect()
+            }
 
         []
+    }
+
+    void repeat(GrettyClient client, ResourcePool.Allocate operation) {
+        releaseResource  client
+        allocateResource operation
     }
 
     private void attemptToConnect () {
@@ -71,32 +87,32 @@ import java.util.concurrent.Executor
         httpClient.localAddress = localAddress
         httpClient.adapter = [
             onConnect: {
+                allConnected.add httpClient.channel
                 connectingClients.decrementAndGet ()
                 connectedClients.incrementAndGet()
                 add(httpClient)
-                executor.execute {
+                connectExecutor.execute {
                     attemptToConnect()
                 }
             },
 
             onConnectFailed: { cause ->
-                connectingClients.decrementAndGet ()
-                connectedClients.incrementAndGet () // onDisconnect will decrease
-                executor.execute {
+                assert connectingClients.decrementAndGet ()
+                connectExecutor.execute {
                     attemptToConnect()
                 }
             },
 
             onDisconnect: {
                 connectedClients.decrementAndGet ()
-                executor.execute {
+                connectExecutor.execute {
                     attemptToConnect()
                 }
             }
         ]
         httpClient.connect()
 
-        executor.execute {
+        connectExecutor.execute {
             attemptToConnect()
         }
     }
@@ -108,4 +124,10 @@ import java.util.concurrent.Executor
     int getConnectingClients () { connectingClients }
 
     int getConnectedClients () { connectedClients }
+
+    void shutdown () {
+        allConnected.close()
+        channelFactory.releaseExternalResources()
+        ExecutorUtil.terminate(connectExecutor)
+    }
 }

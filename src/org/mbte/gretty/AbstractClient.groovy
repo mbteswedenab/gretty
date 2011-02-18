@@ -25,6 +25,7 @@ import java.util.concurrent.Executors
 import org.jboss.netty.channel.local.LocalClientChannelFactory
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory
 import org.mbte.gretty.httpclient.AbstractClientHandler
+import java.nio.channels.ClosedChannelException
 
 @Typed class AbstractClient extends SimpleChannelHandler implements ChannelPipelineFactory, AbstractClientHandler {
     protected volatile Channel channel
@@ -65,39 +66,15 @@ import org.mbte.gretty.httpclient.AbstractClientHandler
         bootstrap.setOption("keepAlive",  true)
 
         def connectFuture = bootstrap.connect(remoteAddress, localAddress)
-        channel = connectFuture.channel
 
-        def returnFuture = Channels.future(channel)
         connectFuture.addListener { future ->
-            if(future.success) {
-                try {
-                    onConnect ()
-                }
-                catch(Throwable t) {
-                    returnFuture.setFailure(t)
-                    channel.close()
-                    return
-                }
-                returnFuture.setSuccess()
-            }
-            else {
-               channel = null
-               future.channel.close ()
-               try {
-                   onConnectFailed (future.cause)
-               }
-               catch(Throwable ignore) { //
-               }
-               returnFuture.setFailure(future.cause)
-            }
-
             if(shouldReleaseResources) {
                 future.channel.closeFuture.addListener { future2 ->
                     future2.channel.factory.releaseExternalResources()
                 }
             }
         }
-        returnFuture
+        connectFuture
     }
 
     void connect(ChannelFutureListener listener) {
@@ -111,20 +88,42 @@ import org.mbte.gretty.httpclient.AbstractClientHandler
         channel?.connected
     }
 
+    void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        channel = ctx.channel
+        onConnect()
+    }
+
+    void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        channel = null
+        onDisconnect()
+    }
+
     void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-        ctx.channel.close ()
-        onException e.cause
+        def c = channel
+        channel = null
+
+        if(c) {
+            onException e.cause
+            c.close()
+        }
     }
 
     void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        if(channel != null) {
-            channel = null
-            onDisconnect()
+        def c = channel
+        channel = null
+
+        if(c) {
+            if(c.connected) {
+                onDisconnect()
+            }
+            else {
+                onConnectFailed (new ClosedChannelException())
+            }
         }
     }
 
     void disconnect() {
-        channel?.close()
+        close()
     }
 
     ChannelPipeline getPipeline () {
@@ -142,6 +141,12 @@ import org.mbte.gretty.httpclient.AbstractClientHandler
     }
 
     void close() {
-        channel?.close()
+        def c = channel
+        channel = null
+
+        if(c?.connected) {
+            onDisconnect()
+        }
+        c?.close()
     }
 }

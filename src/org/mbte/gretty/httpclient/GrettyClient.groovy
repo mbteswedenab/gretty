@@ -105,10 +105,10 @@ import java.nio.channels.ClosedChannelException
     }
 
     void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        super.channelClosed(ctx, e)
+
         def pending = pendingRequest.getAndSet(null)
         pending?.second?.setException(new ClosedChannelException())
-
-        super.channelClosed(ctx, e)
     }
 
     @Override

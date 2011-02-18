@@ -19,7 +19,7 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'org.mbte.groovypp'
-version = '0.4.155'
+version = '0.4.165'
 
 def gppVersion = '0.4.155'
 
@@ -71,7 +71,10 @@ artifacts {
 
 uploadArchives {
     repositories.mavenDeployer {
-        repository(url: "http://groovypp.artifactoryonline.com/groovypp/libs-releases-local/") {
+        def repo = "http://groovypp.artifactoryonline.com/groovypp/libs-releases-local/"
+        if(System.getProperty("repo") == 'local')
+            repo = 'file://' + new File(System.getProperty('user.home'), ".m2${File.separatorChar}repository").absolutePath
+        repository(url: repo) {
             authentication(userName: ARTIFACTORY_USER, password: ARTIFACTORY_PASSWORD)
         }
     }
