@@ -157,9 +157,11 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
         response.protocolVersion = request.protocolVersion
         def uri = request.path
 
+        response.async.incrementAndGet()
+
         findContext(uri)?.handleHttpRequest(request, response)
 
-        if (!response.async)
+        if (!response.async.decrementAndGet())
             response.complete()
     }
 

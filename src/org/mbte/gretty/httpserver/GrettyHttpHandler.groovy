@@ -34,6 +34,15 @@ import org.codehaus.jackson.map.ObjectMapper
         clone.handle (pathArgs)
     }
 
+    final void execute(Runnable command) {
+        response.async.incrementAndGet()
+        server.execute {
+            command.run()
+            if(!response.async.decrementAndGet())
+                response.complete()
+        }
+    }
+
     final void redirect(String where) {
         response.redirect(where)
     }

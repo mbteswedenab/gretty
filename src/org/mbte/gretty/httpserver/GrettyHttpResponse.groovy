@@ -41,7 +41,7 @@ import java.lang.reflect.Modifier
 
     String charset = "UTF-8"
 
-    boolean async
+    protected volatile int async
 
     private volatile Channel channel
     private boolean keepAlive
@@ -67,7 +67,6 @@ import java.lang.reflect.Modifier
     void complete() {
         def channel = this.channel
 
-        async = true
         if (!channel)
             return
 

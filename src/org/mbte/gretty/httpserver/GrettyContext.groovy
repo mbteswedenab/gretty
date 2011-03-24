@@ -110,6 +110,10 @@ import org.jboss.netty.handler.codec.http.HttpMethod
             }
         }
 
+        for(matcherList in handlers.values())
+            for(matcher in matcherList)
+                matcher.handler.server = server
+
         if(defaultHandler)
             defaultHandler.server = server
     }

@@ -73,7 +73,7 @@ import org.jboss.netty.handler.codec.http.HttpMessage
     }
 
     void proxyRequest(GrettyHttpRequest request, GrettyHttpResponse response) {
-        response.async = true
+        response.async.incrementAndGet()
         for(;;) {
             def s = state
             if(state.compareAndSet(s, [queue: s.queue + [request, response], connected:s.connected])) {
