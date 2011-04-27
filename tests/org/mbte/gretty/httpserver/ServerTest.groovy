@@ -1,6 +1,7 @@
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.local.LocalAddress
+import org.jboss.netty.handler.codec.http.HttpMethod
 
 @Typed class ServerTest extends GroovyTestCase implements HttpRequestHelper {
 
@@ -19,6 +20,10 @@ import org.jboss.netty.channel.local.LocalAddress
                         }
 
                         get("/data/") {}
+
+                        post("/post") {
+                            response.json = request.contentText.toUpperCase ()
+                        }
                     },
 
                     default: {
@@ -61,6 +66,13 @@ import org.jboss.netty.channel.local.LocalAddress
         doTest("/data") { response ->
             assertNull response.getHeader("mapId")
             assertNull response.getHeader("objectId")
+        }
+    }
+
+    void testPost() {
+        GrettyHttpRequest req = [method:HttpMethod.POST, uri:"/post", json:"{\"obj\":\"mama\"}"]
+        doTest(req) { GrettyHttpResponse response ->
+            assert response.contentText == "{\"OBJ\":\"MAMA\"}"
         }
     }
 }

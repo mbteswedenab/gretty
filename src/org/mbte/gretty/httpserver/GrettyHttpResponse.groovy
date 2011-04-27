@@ -34,8 +34,11 @@ import org.jboss.netty.handler.stream.ChunkedStream
 import org.jboss.netty.handler.codec.http.DefaultHttpChunk
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer
 import java.lang.reflect.Modifier
+import org.mbte.gretty.JacksonCategory
 
-@Typed class GrettyHttpResponse extends DefaultHttpResponse {
+@Typed
+@Use(JacksonCategory)
+class GrettyHttpResponse extends DefaultHttpResponse {
 
     Object responseBody
 
@@ -136,7 +139,7 @@ import java.lang.reflect.Modifier
 
     void setJson(Object body) {
         setHeader(CONTENT_TYPE, "application/json; charset=$charset")
-        content = ChannelBuffers.copiedBuffer(body instanceof String ? body.toString() : body.toJson(), charset)
+        content = ChannelBuffers.copiedBuffer(body instanceof String ? body.toString() : body.toJsonString(), charset)
     }
 
     void setXml(Object body) {
@@ -148,65 +151,6 @@ import java.lang.reflect.Modifier
         status = HttpResponseStatus.MOVED_PERMANENTLY
         setHeader HttpHeaders.Names.LOCATION, where
         setHeader HttpHeaders.Names.CONTENT_LENGTH, 0
-    }
-
-    static String toJson (Object obj) {
-        if(!obj)
-            return 'null'
-
-        switch(obj) {
-            case Map:
-                StringBuilder sb = []
-                sb << '{'
-                def first = true
-                for(e in obj.entrySet()) {
-                    if(!first) {
-                        sb << ','
-                    }
-                    first = false
-                    sb << "\"${e.key}\":${e.value.toJson()}"
-                }
-                sb << '}'
-                return sb
-
-            case List:
-                StringBuilder sb = []
-                sb << '['
-                def first = true
-                for(e in obj) {
-                    if(!first) {
-                        sb << ','
-                    }
-                    first = false
-                    sb << e.toJson()
-                }
-                sb << ']'
-                return sb
-
-            case String:
-                return "\"${obj}\""
-
-            case Number:
-                return obj
-
-            default:
-                def clazz = ReflectionCache.getCachedClass(obj.class)
-                StringBuilder sb = []
-                sb << '{'
-                def list = clazz.fields.toList()
-                def first = true
-                for(f in list) {
-                    if((f.modifiers & (Modifier.STATIC|Modifier.TRANSIENT)))
-                        continue
-                    if(!first) {
-                        sb << ','
-                    }
-                    first = false
-                    sb << "\"${f.name}\":${f.getProperty(obj).toJson()}"
-                }
-                sb << '}'
-                return sb
-        }
     }
 
     String getContentText () {

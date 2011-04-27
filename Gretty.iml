@@ -76,11 +76,11 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp-all/jars/groovypp-all-0.4.180.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp-all/jars/groovypp-all-0.4.226_1.7.10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp-all/sources/groovypp-all-0.4.180-sources.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/org.mbte.groovypp/groovypp-all/sources/groovypp-all-0.4.226_1.7.10-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -98,11 +98,11 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/org.codehaus.groovy/groovy-all/jars/groovy-all-1.7.8.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/org.codehaus.groovy/groovy-all/jars/groovy-all-1.7.10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/cache/org.codehaus.groovy/groovy-all/sources/groovy-all-1.7.8-sources.jar!/" />
+          <root url="jar://$USER_HOME$/.gradle/cache/org.codehaus.groovy/groovy-all/sources/groovy-all-1.7.10-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>

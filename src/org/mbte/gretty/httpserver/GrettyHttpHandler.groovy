@@ -19,10 +19,11 @@ package org.mbte.gretty.httpserver
 import freemarker.template.Configuration
 import freemarker.template.ObjectWrapper
 import org.codehaus.jackson.map.ObjectMapper
+import org.mbte.gretty.JacksonCategory
 
-@Typed abstract class GrettyHttpHandler implements Cloneable {
-    private static final ObjectMapper mapper = []
-
+@Typed
+@Use(JacksonCategory)
+abstract class GrettyHttpHandler implements Cloneable {
     GrettyHttpRequest  request
     GrettyHttpResponse response
     GrettyServer       server
@@ -65,21 +66,6 @@ import org.codehaus.jackson.map.ObjectMapper
 
     final String template(String file, Function1<Map,Void> dataBinding) {
         template(file, [:], dataBinding)
-    }
-
-    static <T> T fromJson(Class<T> clazz, String jsonText) {
-        try {
-            mapper.readValue(jsonText, clazz)
-        }
-        catch(t) {
-            return null
-        }
-    }
-
-    static <T> String toJson(T object) {
-        def writer = new StringWriter()
-        mapper.writeValue(writer, object)
-        writer.toString()
     }
 
     abstract void handle(Map<String,String> pathArguments)

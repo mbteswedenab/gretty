@@ -72,7 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger
             clientsNumber: 250
         ]
 
-        def cdl = new CountDownLatch(500*100)
+        def cdl = new CountDownLatch(50*10)
 
         def printStat = { String reason ->
             synchronized(cdl) { // does not really matter on what to sync
@@ -81,8 +81,8 @@ import java.util.concurrent.atomic.AtomicInteger
         }
 
         AtomicInteger jobsCompleted = [0]
-        for(i in 0..<500) {
-            AtomicInteger iterations = [100]
+        for(i in 0..<50) {
+            AtomicInteger iterations = [10]
 
             load.allocateResource { grettyClient ->
                 ResourcePool.Allocate  withClient = this

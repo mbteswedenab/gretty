@@ -41,7 +41,7 @@ import java.nio.channels.ClosedChannelException
 
 @Typed class GrettyClient extends AbstractHttpClient {
 
-    static class ResponseResult extends BindLater<HttpResponse> {
+    static class ResponseResult extends BindLater<GrettyHttpResponse> {
         volatile long written
         volatile long received
     }
@@ -52,12 +52,12 @@ import java.nio.channels.ClosedChannelException
         super(remoteAddress, factory)
     }
 
-    BindLater<HttpResponse> request(GrettyHttpRequest request) {
-        requestInternal request, []
-    }
-
     void request(GrettyHttpRequest request, Executor executor = null, BindLater.Listener<GrettyHttpResponse> action) {
         requestInternal request, (ResponseResult)new ResponseResult().whenBound(executor, action)
+    }
+
+    ResponseResult request(GrettyHttpRequest request) {
+        requestInternal request, []
     }
 
     private ResponseResult requestInternal (GrettyHttpRequest request, ResponseResult later) {

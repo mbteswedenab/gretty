@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 MBTE Sweden AB.
+ * Copyright 2009-2011 MBTE Sweden AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,28 @@
 
 package org.mbte.gretty.httpserver
 
+import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*
 import org.jboss.netty.handler.codec.http.*
 import org.jboss.netty.handler.codec.base64.Base64
 import org.jboss.netty.buffer.ChannelBuffers
+import org.jboss.netty.buffer.ChannelBuffer
+import org.mbte.gretty.JacksonCategory
 
-@Typed class GrettyHttpRequest extends DefaultHttpRequest {
+@Typed
+@Use(JacksonCategory)
+class GrettyHttpRequest extends DefaultHttpRequest {
 
     private String path
     private Map<String, List<String>> params
     private boolean followRedirects = false
 
-    public GrettyHttpRequest(HttpVersion httpVersion = HttpVersion.HTTP_1_1, HttpMethod method = HttpMethod.GET, String uri) {
+    String charset = "UTF-8"
+
+    GrettyHttpRequest() {
+        super(HttpVersion.HTTP_1_1, HttpMethod.GET, "")
+    }
+
+    GrettyHttpRequest(HttpVersion httpVersion = HttpVersion.HTTP_1_1, HttpMethod method = HttpMethod.GET, String uri) {
         super(httpVersion, method, uri)
     }
 
@@ -58,8 +69,38 @@ import org.jboss.netty.buffer.ChannelBuffers
 //        }
     }
 
+    void setContent(ChannelBuffer obj) {
+        if (content?.readableBytes() > 0)
+            throw new IllegalStateException("Body of http request already set")
+
+        if (!getHeader(CONTENT_LENGTH))
+            setHeader(CONTENT_LENGTH, obj.readableBytes())
+
+        super.setContent(obj)
+    }
+
     String getContentText () {
         new String(content.array(), content.arrayOffset(), content.readableBytes())
+    }
+
+    void setText(Object body) {
+        setHeader(CONTENT_TYPE, "text/plain; charset=$charset")
+        content = ChannelBuffers.copiedBuffer(body.toString(), charset)
+    }
+
+    void setHtml(Object body) {
+        setHeader(CONTENT_TYPE, "text/html; charset=$charset")
+        content = ChannelBuffers.copiedBuffer(body.toString(), charset)
+    }
+
+    void setJson(Object body) {
+        setHeader(CONTENT_TYPE, "application/json; charset=$charset")
+        content = ChannelBuffers.copiedBuffer(body instanceof String ? body.toString() : body.toJsonString(), charset)
+    }
+
+    void setXml(Object body) {
+        setHeader(CONTENT_TYPE, "application/xml; charset=$charset")
+        content = ChannelBuffers.copiedBuffer(body.toString(), charset)
     }
 
     GrettyHttpRequest setAuthorization (String user, String password) {
