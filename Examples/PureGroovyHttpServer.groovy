@@ -6,7 +6,7 @@ import org.mbte.gretty.httpclient.GrettyWebsocketClient
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
-// Server part
+// Server part - Note that it does not use Groovy++ but pure Groovy
 // Very simple websocket server, which prints incoming messages
 // and replies to every message with the same text in uppercase
 
