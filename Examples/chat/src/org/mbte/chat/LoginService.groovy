@@ -19,23 +19,31 @@ package org.mbte.chat
 import com.google.inject.Inject
 import org.mbte.chat.model.User
 import org.mbte.chat.model.UserDAO
+import com.hazelcast.core.HazelcastInstance
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 @Typed class LoginService {
     @Inject UserDAO userDao
+    @Inject HazelcastInstance hazelcast
+
+    private Executor cacheExecutor = Executors.newFixedThreadPool(10)
 
     String login(String userName, String password) {
         def user = userDao.findByName(userName)
 
         if(user?.password == password) {
             def session = UUID.randomUUID().toString()
+            hazelcast.getMap("sessions").put(session, user.id, 20, TimeUnit.MINUTES)
             session
         }
     }
 
     User login(String session) {
-//        def userId = get(session)
-//        if(userId) {
-//            userService.get(userId)
-//        }
+        String userId = hazelcast.getMap("sessions").get(session)
+        if(userId) {
+            userDao.get(userId)
+        }
     }
 }

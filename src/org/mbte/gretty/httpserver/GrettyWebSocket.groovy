@@ -65,12 +65,15 @@ import groovypp.concurrent.FList
                 l.onMessage(message)
             }
             catch(e) { //
+                e.printStackTrace()
             }
         }
     }
 
     static class Channeled extends GrettyWebSocket implements ChannelUpstreamHandler {
         private final Channel channel
+
+        GrettyServer server
 
         Channeled(Channel channel) {
             this.channel = channel
@@ -87,8 +90,13 @@ import groovypp.concurrent.FList
         void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) {
             switch(e) {
                 case MessageEvent:
-                    WebSocketFrame frame = e.message
-                    notifyMessage(frame.textData)
+                    def that = this
+                    server.execute {
+                        synchronized(that) {
+                            WebSocketFrame frame = e.message
+                            notifyMessage(frame.textData)
+                        }
+                    }
                 break
 
                 case ChannelStateEvent:

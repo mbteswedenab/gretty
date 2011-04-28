@@ -20,6 +20,9 @@ import freemarker.template.Configuration
 import freemarker.template.ObjectWrapper
 import org.codehaus.jackson.map.ObjectMapper
 import org.mbte.gretty.JacksonCategory
+import groovypp.concurrent.BindLater
+import groovypp.concurrent.CallLater
+import java.util.concurrent.Executor
 
 @Typed
 @Use(JacksonCategory)
@@ -27,6 +30,35 @@ abstract class GrettyHttpHandler implements Cloneable {
     GrettyHttpRequest  request
     GrettyHttpResponse response
     GrettyServer       server
+
+    private static class GrettyHttpHandlerAroundClosure extends GrettyHttpHandler {
+        Closure closure
+
+        GrettyHttpHandlerAroundClosure(Closure closure) {
+            this.closure = closure
+            closure.delegate = this
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+        }
+
+        void handle(Map<String, String> pathArguments) {
+            closure(pathArguments)
+        }
+
+        protected def clone() {
+            GrettyHttpHandlerAroundClosure cloned = super.clone ()
+            Closure clonedClosure = closure.clone ()
+
+            cloned.closure = clonedClosure
+            clonedClosure.delegate = cloned
+            clonedClosure.resolveStrategy = Closure.DELEGATE_FIRST
+
+            cloned
+        }
+    }
+
+    static GrettyHttpHandler fromClosure(Closure closure) {
+        new GrettyHttpHandlerAroundClosure(closure)
+    }
 
     final void handle (GrettyHttpRequest request, GrettyHttpResponse response, Map<String,String> pathArgs) {
         GrettyHttpHandler clone = clone ()
@@ -41,6 +73,19 @@ abstract class GrettyHttpHandler implements Cloneable {
             command.run()
             if(!response.async.decrementAndGet())
                 response.complete()
+        }
+    }
+
+    final <S> BindLater<S> async(Executor executor = null, CallLater<S> action, BindLater.Listener<S> whenDone = null) {
+        if(whenDone)
+            action.whenBound whenDone
+
+        response.async.incrementAndGet()
+        server.async(executor){
+            def res = action.run()
+            if(!response.async.decrementAndGet())
+                response.complete()
+            res
         }
     }
 

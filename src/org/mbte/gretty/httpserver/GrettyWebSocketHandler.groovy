@@ -19,9 +19,34 @@ package org.mbte.gretty.httpserver
 import org.jboss.netty.handler.codec.http.HttpRequest
 
 @Typed abstract class GrettyWebSocketHandler extends GrettyWebSocketListener implements Cloneable {
-    protected GrettyWebSocket socket
+    protected volatile GrettyWebSocket socket
 
     protected String socketPath
+
+    private static class GrettyWebSocketHandlerAroundClosure extends GrettyWebSocketHandler {
+        Closure closure
+        GrettyWebSocketHandlerAroundClosure(Closure closure) {
+            this.closure = closure
+        }
+        void onMessage(String message) {
+            closure(message)
+        }
+
+        GrettyWebSocketHandler clone() {
+            GrettyWebSocketHandlerAroundClosure cloned = super.clone ()
+            Closure clonedClosure = closure.clone ()
+
+            cloned.closure = clonedClosure
+            clonedClosure.delegate = cloned
+            clonedClosure.resolveStrategy = Closure.DELEGATE_FIRST
+
+            cloned
+        }
+    }
+
+    static GrettyWebSocketHandler fromClosure(Closure closure) {
+        new GrettyWebSocketHandlerAroundClosure(closure)
+    }
 
     void connect(GrettyWebSocket socket, HttpRequest request) {
         this.socket = socket

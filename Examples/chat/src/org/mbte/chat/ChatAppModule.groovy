@@ -23,12 +23,19 @@ import com.google.code.morphia.Morphia
 import org.mbte.chat.model.UserDAO
 import org.mbte.chat.model.MongoDatastore
 import org.mbte.chat.model.ConversationDAO
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
 
-@Typed class MongoModule extends AbstractModule{
+@Typed class ChatAppModule extends AbstractModule{
     protected void configure() {
+        bind(HazelcastInstance).toProvider {
+            Hazelcast.defaultInstance
+        }.in(Singleton)
+
         bind(Mongo).in(Singleton)
         bind(Morphia).in(Singleton)
         bind(MongoDatastore).in(Singleton)
+
         bind(UserDAO).in(Singleton)
         bind(ConversationDAO).in(Singleton)
     }

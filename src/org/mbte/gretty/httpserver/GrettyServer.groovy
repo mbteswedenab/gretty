@@ -22,6 +22,11 @@ import org.jboss.netty.handler.stream.ChunkedWriteHandler
 import org.jboss.netty.logging.InternalLogLevel
 
 import org.mbte.gretty.AbstractServer
+import java.util.concurrent.Executor
+import groovypp.concurrent.BindLater
+import groovypp.concurrent.CallLater
+import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.GeneratedClosure
 
 @Typed class GrettyServer extends AbstractServer {
     GrettyContext defaultContext
@@ -102,5 +107,26 @@ import org.mbte.gretty.AbstractServer
             pipeline.addLast("http.logger", logger)
 
         pipeline.addLast("http.application", new GrettyAppHandler(this))
+    }
+
+    final <S> BindLater<S> async(Executor executor = null, CallLater<S> action) {
+        if(!executor)
+            executor = threadPool
+        executor.callLater(action)
+    }
+
+    final void setGroovy(Map<String,Object> properties) {
+        def mc = InvokerHelper.getMetaClass(this.class)
+        for(e in properties.entrySet()) {
+            def property = mc.getMetaProperty(e.key)
+            if(!property)
+                throw new RuntimeException("No such property '${e.key}'")
+
+            if(e.value instanceof GeneratedClosure) {
+                property.setProperty(this, property.type.getDeclaredMethod("fromClosure", Closure).invoke(null, e.value))
+            }
+            else
+                property.setProperty(this, e.value)
+        }
     }
 }

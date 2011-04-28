@@ -16,8 +16,6 @@
 
 package org.mbte.chat
 
-import com.google.inject.Guice
-import com.google.inject.Module
 import org.mbte.chat.model.User
 import com.mongodb.MongoException
 
@@ -54,15 +52,16 @@ import com.mongodb.MongoException
     }
 
     void testLogin () {
-//        def userDAO = chatApp.userDao
-//
-//        def user = userDAO.newUser()[userName: 'User1', password:'password']
-//        userDAO.save(user)
-//
-//        def session = chatApp.loginService.login("User1","password")
-//        assert session
-//
-//        def logonUser = chatApp.loginService.login(session)
-//        assert logonUser?.id == user.id
+        def session = chatApp.loginService.login("User1","password")
+        assert !session
+
+        def user = chatApp.userDao.newUser()[userName: 'User1', password:'password']
+        chatApp.userDao.save(user)
+
+        session = chatApp.loginService.login("User1","password")
+        assert session
+
+        def logonUser = chatApp.loginService.login(session)
+        assert logonUser.id == user.id
     }
 }

@@ -19,9 +19,9 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'org.mbte.groovypp'
-version = '0.4.226'
+version = '0.4.229'
 
-def gppVersion = '0.4.226_1.7.10'
+def gppVersion = '0.4.230_1.7.10'
 
 repositories {
   mavenCentral ()
@@ -33,7 +33,8 @@ repositories {
 }
 
 dependencies {
-    groovy group: 'org.mbte.groovypp', name: 'groovypp-all', version: "$gppVersion"
+    groovy group: 'org.codehaus.groovy', name: 'groovy', version: "1.7.10"
+    compile group: 'org.mbte.groovypp', name: 'groovypp', version: "$gppVersion"
 
     compile group: 'org.jboss.netty', name: 'netty', version: '3.2.1.Final'
     compile(group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.6.1')

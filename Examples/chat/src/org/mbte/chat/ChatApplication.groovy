@@ -22,6 +22,8 @@ import com.google.inject.name.Named
 import org.mbte.chat.model.UserDAO
 import org.mbte.chat.model.MongoDatastore
 import org.mbte.chat.model.ConversationDAO
+import java.util.concurrent.Executors
+import java.util.concurrent.Executor
 
 @Typed
 @com.google.inject.Singleton
@@ -35,6 +37,8 @@ class ChatApplication {
 
     GrettyServer server = []
 
+    Executor ioPool = Executors.newFixedThreadPool(10)
+
     void start () {
         server.localAddress = serverLocalAddress
 
@@ -42,14 +46,14 @@ class ChatApplication {
             "/user" : [
                 public: {
                     post("/create") {
-                        try {
-                            def cmd = Map.fromJson(request.contentText)
+                        def cmd = Map.fromJson(request.contentText)
+                        async(ioPool) {
                             def user = userDao.newUser()[userName:cmd.userName, password:cmd.password]
                             userDao.save (user)
-                            response.json = [status:'ok', userId:user.id]
-                        }
-                        catch(Throwable t) {
-                            response.json = [status:'ERROR', message:t.message]
+                            user
+                        }{ futureUser ->
+                            response.json = [status: 'ok', userId: futureUser.get().id]
+                            response.complete()
                         }
                     }
 

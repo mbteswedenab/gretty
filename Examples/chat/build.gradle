@@ -28,9 +28,12 @@ repositories {
 }
 
 dependencies {
-    groovy group: 'org.mbte.groovypp', name: 'groovypp', version: "0.4.226_1.7.10"
+    groovy group: 'org.codehaus.groovy', name: 'groovy', version: "1.7.10"
 
-    compile group: 'org.mbte.groovypp', name: 'gretty', version: '0.4.226'
+    compile group: 'org.mbte.groovypp', name: 'groovypp', version: "0.4.226_1.7.10"
+
+    compile rootProject
+    compile group: 'com.hazelcast', name: 'hazelcast', version: '1.9.2.2'
     compile group: 'com.google.inject', name: 'guice', version: '3.0'
     compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.5.3'
     compile group: 'com.google.code.morphia', name: 'morphia', version: '0.99'

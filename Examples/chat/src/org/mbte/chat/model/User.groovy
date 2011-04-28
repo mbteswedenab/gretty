@@ -24,7 +24,7 @@ class User {
     @Id
     String id
 
-    @Indexed(unique=true)
+    @Indexed
     String userName
 
     String password

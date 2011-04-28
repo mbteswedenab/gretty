@@ -19,8 +19,10 @@ package org.mbte.chat
 import com.google.inject.Guice
 import com.google.inject.AbstractModule
 import com.google.inject.name.Names
-import org.mbte.gretty.httpclient.GrettyClient
 import org.jboss.netty.channel.local.LocalAddress
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
+import com.google.inject.Singleton
 
 @Typed abstract class ChatAppTest extends GroovyTestCase {
     protected ChatApplication chatApp
@@ -28,22 +30,28 @@ import org.jboss.netty.channel.local.LocalAddress
     protected void setUp() {
         super.setUp()
         chatApp = Guice.createInjector(buildModules()).getInstance(ChatApplication)
+
+        chatApp.loginService.hazelcast.getMap("sessions").clear()
+        chatApp.mongoDatastore.clean()
+
         chatApp.start()
     }
 
     protected void tearDown() {
+        chatApp.loginService.hazelcast.getMap("sessions").clear()
         chatApp.mongoDatastore.clean()
+
         chatApp.stop()
         super.tearDown()
     }
 
     protected List<AbstractModule> buildModules () {
-        [{
-            bind(SocketAddress).annotatedWith(Names.named("serverLocalAddress")).toInstance(new LocalAddress("test_server"))
-        },
-        new MongoModule(),
-        {
-            bind(String).annotatedWith(Names.named("mongoDbName")).toInstance("chatAppTest")
-        }]
+        [
+            new ChatAppModule(),
+            {
+                bind(SocketAddress).annotatedWith(Names.named("serverLocalAddress")).toInstance(new LocalAddress("test_server"))
+                bind(String).annotatedWith(Names.named("mongoDbName")).toInstance("chatAppTest")
+            }
+        ]
     }
 }

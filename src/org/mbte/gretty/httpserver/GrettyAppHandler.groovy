@@ -91,7 +91,7 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
                         }
                     }
                     catch(throwable) {
-                        //
+                        throwable.printStackTrace()
                     }
                 }
             break
@@ -224,13 +224,15 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
 
             p.remove("chunkedWriter")
             p.remove("fileWriter")
+            p.remove("flash.policy.file")
             p.replace("http.request.decoder", "wsdecoder", new WebSocketFrameDecoder())
 
-            def channeled = new Channeled(e.channel)
+            def channeled = new Channeled(e.channel) [server:server]
             channeled.addListener(webSocket)
             p.addLast("websocket.handler", channeled)
 
-            e.channel.write(response).addListener {
+            synchronized(channeled) {
+                e.channel.write(response).await()
                 p.remove("http.application")
                 p.replace("http.request.encoder", "wsencoder", new WebSocketFrameEncoder())
 

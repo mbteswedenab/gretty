@@ -31,6 +31,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder
 import org.jboss.netty.channel.ChannelFuture
 import org.jboss.netty.channel.ChannelFactory
+import org.jboss.netty.channel.Channels
 
 @Typed class GrettyWebsocketClient extends AbstractHttpClient {
     private final String path
@@ -38,6 +39,13 @@ import org.jboss.netty.channel.ChannelFactory
     GrettyWebsocketClient(SocketAddress remoteAddress, String path, ChannelFactory factory = null) {
         super(remoteAddress, factory)
         this.path = path
+    }
+
+    private volatile ChannelFuture connectFuture
+
+    ChannelFuture connect() {
+        super.connect()
+        connectFuture = Channels.future(channel, true)
     }
 
     void onConnect() {
@@ -58,6 +66,7 @@ import org.jboss.netty.channel.ChannelFactory
                     pipeline.remove("http.request.encoder")
                     pipeline.addBefore("http.application", "websocket.decoder", new WebSocketFrameDecoder())
                     pipeline.addBefore("http.application", "websocket.encoder", new WebSocketFrameEncoder())
+                    connectFuture.setSuccess()
                     onWebSocketConnect ()
                 break
 
