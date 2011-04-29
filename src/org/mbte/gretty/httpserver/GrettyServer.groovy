@@ -35,8 +35,6 @@ import org.codehaus.groovy.runtime.GeneratedClosure
 
     Map<String,GrettyContext> webContexts = [:]
 
-    final PseudoWebSocketManager pseudoWebSocketManager = []
-
     GrettyServer() {
         localAddress = new InetSocketAddress(8080)
     }

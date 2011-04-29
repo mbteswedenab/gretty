@@ -83,11 +83,7 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
                             handleWebSocketRequest(ctx, e)
                         }
                         else {
-                            def pseudo = req.getHeader("Pseudo-WebSocket")
-                            if(pseudo)
-                                handlePseudoWebSocket(ctx, e)
-                            else
-                                handleHttpRequest(req, e)
+                            handleHttpRequest(req, e)
                         }
                     }
                     catch(throwable) {
@@ -114,42 +110,6 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
             is.close ()
         }
         res
-    }
-
-    private void handlePseudoWebSocket(ChannelHandlerContext ctx, MessageEvent e) {
-        GrettyHttpRequest request = e.message
-        GrettyHttpResponse response = [e.channel,isKeepAlive(request)]
-        if (request.method != HttpMethod.POST) {
-            e.channel.write(response).addListener(ChannelFutureListener.CLOSE)
-        }
-
-        def uri = request.uri
-        def context = findContext(uri)
-        def webSocket = context?.webSockets?.get((uri.substring(context?.webPath?.length())))
-        if (!webSocket) {
-            e.channel.write(response).addListener(ChannelFutureListener.CLOSE)
-        }
-        else {
-            def sessionId = request.getHeader("Pseudo-WebSocket")
-            if ('null'.equals(sessionId)) {
-                def client = server.pseudoWebSocketManager.allocateId(webSocket)
-                sessionId = client.sessionId
-
-                response.json = "{\"sessionId\":\"$sessionId\",\"messages\":[]}"
-                response.complete()
-
-                client.handler.connect(client, request)
-            }
-            else {
-                def client = server.pseudoWebSocketManager.getClient(sessionId)
-                if(!client) {
-                    e.channel.write(response).addListener(ChannelFutureListener.CLOSE)
-                }
-                else {
-                    client.onRequest(e.channel, fromJson(e))
-                }
-            }
-        }
     }
 
     private void handleHttpRequest(GrettyHttpRequest request, MessageEvent e) {
