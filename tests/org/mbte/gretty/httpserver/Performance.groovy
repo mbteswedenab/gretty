@@ -140,18 +140,20 @@ new ClientManager(address)
                             """
                         }
 
-                        websocket("/ws",[
-                            onMessage: { msg ->
-                                socket.send(msg.toUpperCase())
-                            },
+                        websocket("/ws") { event ->
+                            switch(event) {
+                                case String:
+                                    send(event.toUpperCase())
+                                break
 
-                            onConnect: {
-                                socket.send("Welcome!")
-                            },
+                                case GrettyWebSocketEvent.CONNECT:
+                                    send("Welcome!")
+                                break
 
-                            onDisconnect: {
+                                case  GrettyWebSocketEvent.DISCONNECT:
+                                break
                             }
-                        ])
+                        }
                     }
                 ]
             ]

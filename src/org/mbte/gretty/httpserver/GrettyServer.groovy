@@ -95,7 +95,7 @@ import org.codehaus.groovy.runtime.GeneratedClosure
         pipeline.addLast("flash.policy.file", new FlashPolicyFileHandler(this))
 
         pipeline.addLast("http.request.decoder", new GrettyRequestDecoder())
-        pipeline.addLast("http.request.encoder", new HttpResponseEncoder())
+        pipeline.addLast("http.response.encoder", new GrettyResponseEncoder())
 
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler())
         pipeline.addLast("fileWriter", new FileWriteHandler())

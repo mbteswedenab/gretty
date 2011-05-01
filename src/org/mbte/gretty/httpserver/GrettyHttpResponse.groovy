@@ -35,6 +35,10 @@ import org.jboss.netty.handler.codec.http.DefaultHttpChunk
 import org.jboss.netty.handler.codec.http.DefaultHttpChunkTrailer
 import java.lang.reflect.Modifier
 import org.mbte.gretty.JacksonCategory
+import org.jboss.netty.handler.codec.http.CookieEncoder
+import groovypp.concurrent.BindLater
+import groovypp.concurrent.CallLater
+import java.util.concurrent.Executor
 
 @Typed
 @Use(JacksonCategory)
@@ -127,6 +131,10 @@ class GrettyHttpResponse extends DefaultHttpResponse {
         }
     }
 
+    void setContentType(String type) {
+        setHeader(CONTENT_TYPE, type)
+    }
+
     void setText(Object body) {
         setHeader(CONTENT_TYPE, "text/plain; charset=$charset")
         content = ChannelBuffers.copiedBuffer(body.toString(), charset)
@@ -159,5 +167,13 @@ class GrettyHttpResponse extends DefaultHttpResponse {
 
     void close() {
         channel?.close()
+    }
+
+    GrettyHttpResponse cookies (Map<String,String> cookies) {
+        def encoder = new CookieEncoder(false)
+        for(e in cookies.entrySet())
+            encoder.addCookie(e.key, e.value)
+        setHeader(HttpHeaders.Names.SET_COOKIE, encoder.encode())
+        this
     }
 }

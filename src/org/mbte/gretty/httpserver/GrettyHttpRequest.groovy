@@ -125,6 +125,21 @@ class GrettyHttpRequest extends DefaultHttpRequest {
         this
     }
 
+    Map<String,List<Cookie>> getCookies () {
+        def cookies = getHeaders(HttpHeaders.Names.COOKIE)
+        Map<String,List<Cookie>> res = [:]
+        for(cookie in cookies) {
+            for(c in new CookieDecoder().decode(cookie)) {
+                def list = res[c.name]
+                if(!list)
+                  res[c.name] = [c]
+                else
+                  list << c
+            }
+        }
+        res
+    }
+
     GrettyHttpRequest followRedirects (boolean follow) {
         followRedirects = follow
         this

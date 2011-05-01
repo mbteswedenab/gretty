@@ -107,6 +107,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod
         if (webSockets) {
             for(ws in webSockets.entrySet()) {
                 ws.value.socketPath = ws.key
+                ws.value.server = server
             }
         }
 
@@ -159,8 +160,12 @@ import org.jboss.netty.handler.codec.http.HttpMethod
             uri = uri.substring(1)
 
         def url = staticResourcesClassLoader.getResource("WEB-INF/$staticResources/$uri")
-        if(!url)
-            return null
+        if(!url) {
+            url = staticResourcesClassLoader.getResource("$staticResources/$uri")
+
+            if(!url)
+                return null
+        }
 
         try {
             return [url.openStream(),OK]

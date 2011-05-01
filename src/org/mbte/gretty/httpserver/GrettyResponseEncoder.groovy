@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package org.mbte.gretty.httpclient
+package org.mbte.gretty.httpserver
 
-@Trait abstract class AbstractClientHandler {
-    AbstractClientHandler adapter
+import org.jboss.netty.handler.codec.http.HttpResponseEncoder
+import org.jboss.netty.channel.ChannelHandlerContext
+import org.jboss.netty.channel.Channel
 
-    void onConnect () {
-        adapter?.onConnect()
-    }
-
-    void onConnectFailed (Throwable cause) {
-        adapter?.onConnectFailed cause
-    }
-
-    void onDisconnect () {
-        adapter?.onDisconnect()
-    }
-
-    void onException (Throwable cause) {
-        if(adapter)
-            adapter.onException cause
-        else
-            cause.printStackTrace()
+@Typed class GrettyResponseEncoder extends HttpResponseEncoder {
+    // we need this class it only to make method public
+    Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) {
+        return super.encode(ctx, channel, msg)
     }
 }

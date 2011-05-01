@@ -45,16 +45,21 @@ import java.util.concurrent.atomic.AtomicInteger
 
                         get("/data/") {}
 
-                        websocket("/ws",[
-                            onMessage: { msg ->
-                                println "-- $msg"
-                                socket.send(msg.toUpperCase())
-                            },
+                        websocket("/ws"){ event ->
+                            switch(event) {
+                                case String:
+                                    println "-- $event"
+                                    send(event.toUpperCase())
+                                break
 
-                            onConnect: {
-                                socket.send("Welcome!")
+                                case GrettyWebSocketEvent.CONNECT:
+                                    send("Welcome!")
+                                break
+
+                                case  GrettyWebSocketEvent.DISCONNECT:
+                                break
                             }
-                        ])
+                        }
                     }
                 ]
             ]
@@ -99,7 +104,7 @@ import java.util.concurrent.atomic.AtomicInteger
         def timer = new Timer ()
         AtomicInteger counter = [0]
 
-        CountDownLatch cdl = [21]
+        CountDownLatch cdl = [11]
 
         GrettyWebsocketClient client = [
             'super' : [new LocalAddress("test_server"), "/ws"],

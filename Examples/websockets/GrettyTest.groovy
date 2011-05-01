@@ -9,10 +9,6 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame
 import org.codehaus.jackson.map.ObjectMapper
 import org.mbte.gretty.httpserver.GrettyContext
-import org.mbte.gretty.cassandra.AsyncCassandra
-import org.mbte.gretty.cassandra.AsyncColumnPath
-import org.mbte.gretty.cassandra.AsyncKeyspace
-import org.mbte.gretty.cassandra.thrift.ConsistencyLevel
 
 def rootLogger = LogManager.logManager.getLogger("")
 rootLogger.setLevel(Level.FINE)
@@ -86,10 +82,6 @@ class Game {
 }
 
 class LifeGame extends GrettyContext  {
-    AsyncCassandra  cassandra = [["localhost"]]
-    AsyncKeyspace   keyspace  = [cassandra, "Keyspace1"]
-    AsyncColumnPath userName  = [keyspace, "Standard1", "userName"]
-
     static class AuthRequest {
         String userId
         String password

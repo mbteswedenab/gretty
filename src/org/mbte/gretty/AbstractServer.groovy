@@ -93,4 +93,8 @@ import org.mbte.gretty.httpserver.IoMonitor
         pipeline.addFirst ("serverItself", this)
         pipeline.addFirst ("ioMonitor", ioMonitor)
     }
+
+    ExecutorService getThreadPool () {
+        this.threadPool
+    }
 }

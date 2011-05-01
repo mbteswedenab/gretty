@@ -33,18 +33,11 @@ import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.http.HttpResponseStatus
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameEncoder
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder
-import org.codehaus.jackson.node.ObjectNode
-
-import org.codehaus.jackson.node.ArrayNode
-import org.jboss.netty.buffer.ChannelBufferInputStream
-import org.codehaus.jackson.JsonNode
-import org.codehaus.jackson.map.ObjectMapper
 
 import org.jboss.netty.channel.ChannelStateEvent
 import org.jboss.netty.logging.InternalLoggerFactory
 import org.jboss.netty.logging.InternalLogger
-import org.jboss.netty.logging.InternalLogLevel
-import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
+import org.jboss.netty.handler.codec.http.HttpMessageEncoder
 
 @Typed class GrettyAppHandler extends SimpleChannelHandler {
     private static final WEBSOK_OK = new HttpResponseStatus(101,"Web Socket Protocol Handshake")
@@ -77,17 +70,17 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
         switch(msg) {
             case GrettyHttpRequest:
                 def req = msg
-                server.execute {
-                    try {
-                        if(UPGRADE.equalsIgnoreCase(req.getHeader(CONNECTION)) && WEBSOCKET.equalsIgnoreCase(req.getHeader(UPGRADE))) {
-                            handleWebSocketRequest(ctx, e)
-                        }
-                        else {
+                if(UPGRADE.equalsIgnoreCase(req.getHeader(CONNECTION)) && WEBSOCKET.equalsIgnoreCase(req.getHeader(UPGRADE))) {
+                    handleWebSocketRequest(ctx, e)
+                }
+                else {
+                    server.execute {
+                        try {
                             handleHttpRequest(req, e)
                         }
-                    }
-                    catch(throwable) {
-                        throwable.printStackTrace()
+                        catch(throwable) {
+                            throwable.printStackTrace()
+                        }
                     }
                 }
             break
@@ -95,21 +88,6 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
             default:
                 super.messageReceived(ctx, e)
         }
-    }
-
-    private ArrayNode fromJson(MessageEvent e) {
-        GrettyHttpRequest request = e.message
-        ChannelBufferInputStream is = [request.content]
-        ArrayNode res
-        try {
-            ObjectMapper mapper = []
-            res = ((ObjectNode)mapper.readValue(is, JsonNode)).get("messages")
-
-        }
-        finally {
-            is.close ()
-        }
-        res
     }
 
     private void handleHttpRequest(GrettyHttpRequest request, MessageEvent e) {
@@ -185,19 +163,13 @@ import org.mbte.gretty.httpserver.GrettyWebSocket.Channeled
             p.remove("chunkedWriter")
             p.remove("fileWriter")
             p.remove("flash.policy.file")
-            p.replace("http.request.decoder", "wsdecoder", new WebSocketFrameDecoder())
+            p.remove("http.request.decoder")
+            p.remove("http.application")
 
-            def channeled = new Channeled(e.channel) [server:server]
-            channeled.addListener(webSocket)
-            p.addLast("websocket.handler", channeled)
+            p.addLast("websocket.decoder", new WebSocketFrameDecoder())
+            p.addLast("websocket.encoder", new WebSocketFrameEncoder())
 
-            synchronized(channeled) {
-                e.channel.write(response).await()
-                p.remove("http.application")
-                p.replace("http.request.encoder", "wsencoder", new WebSocketFrameEncoder())
-
-                webSocket.connect(channeled, req)
-            }
+            webSocket.initConnection(ctx, response)
         }
     }
 }

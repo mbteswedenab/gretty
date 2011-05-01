@@ -15,16 +15,21 @@ import java.util.concurrent.atomic.AtomicInteger
             webContexts: [
                 "/" : [
                     public: {
-                        websocket("/ws",[
-                            onMessage: { msg ->
-                                println "-- $msg"
-                                socket.send(msg.toUpperCase())
-                            },
+                        websocket("/ws"){ event ->
+                            switch(event) {
+                                case String:
+                                    println "-- $event"
+                                    broadcast(event.toUpperCase())
+                                break
 
-                            onConnect: {
-                                socket.send("Welcome!")
+                                case GrettyWebSocketEvent.CONNECT:
+                                    send("Welcome!")
+                                break
+
+                                case  GrettyWebSocketEvent.DISCONNECT:
+                                break
                             }
-                        ])
+                        }
                     }
                 ]
             ]
@@ -40,7 +45,7 @@ import java.util.concurrent.atomic.AtomicInteger
         def timer = new Timer ()
         AtomicInteger counter = [0]
 
-        CountDownLatch cdl = [21]
+        CountDownLatch cdl = [11]
 
         GrettyWebsocketClient client = [
             'super' : [new LocalAddress("test_server2"), "/ws"],
@@ -68,5 +73,39 @@ import java.util.concurrent.atomic.AtomicInteger
         cdl.await()
         client.disconnect()
         println "done"
+
+        timer.cancel()
+    }
+
+    void testMulti () {
+        for(i in 0..<10) {
+            CountDownLatch cdl = [1]
+            GrettyWebsocketClient client = [
+                'super' : [new LocalAddress("test_server2"), "/ws"],
+
+                onMessage: { msg ->
+                    println "<< $msg"
+                    cdl.countDown()
+                },
+
+                onWebSocketConnect: {
+                    timer.scheduleAtFixedRate ({
+                        def string = "Hello, world! $counter"
+                        send(string)
+                        println ">> $string"
+                        cdl.countDown()
+                        if(counter.incrementAndGet() == 10) {
+                            cancel ()
+                        }
+                    }, 10, 50)
+                }
+            ]
+
+            client.connect ()
+
+            cdl.await()
+            client.disconnect()
+            println "done"
+        }
     }
 }

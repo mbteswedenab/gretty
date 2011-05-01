@@ -44,8 +44,8 @@ import org.jboss.netty.channel.Channels
     private volatile ChannelFuture connectFuture
 
     ChannelFuture connect() {
-        super.connect()
         connectFuture = Channels.future(channel, true)
+        super.connect()
     }
 
     void onConnect() {

@@ -16,8 +16,10 @@
 
 package org.mbte.gretty.httpserver
 
-abstract class GrettyWebSocketListener {
-    void onDisconnect() {}
+public enum GrettyWebSocketEvent {
+    CONNECT,
 
-    abstract void onMessage(String message)
+    DISCONNECT,
+
+    INITIALIZE
 }
