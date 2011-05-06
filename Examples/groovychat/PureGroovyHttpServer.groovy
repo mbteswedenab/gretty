@@ -6,10 +6,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.Executor
 import org.mbte.gretty.httpserver.GrettyHttpHandler
-import org.mbte.gretty.httpserver.SocketIO
-import org.mbte.gretty.httpserver.GrettyWebSocketEvent
 
 def facebook = new FacebookService()
+
 def server = new GrettyServer()
 server.groovy = [
 

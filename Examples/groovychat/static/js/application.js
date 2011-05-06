@@ -10,9 +10,6 @@ function onnameclick(id) {
     FB.ui({method: 'apprequests', to: id, message: 'You should learn more about this awesome game.', data: 'tracking information for the user'});
 }
 
-function load () {
-}
-
 function message(obj){
   var el = document.createElement('p');
   if ('announcement' in obj) {
@@ -43,7 +40,6 @@ function send(){
   var val = document.getElementById('text').value;
   var post = { post: { message: val, userName: userName, userId: userId} };
   socket.send(post);
-  message(post);
   document.getElementById('text').value = '';
 }
 
@@ -55,7 +51,6 @@ var socket = new io.Socket(null, {port: document.location.port, rememberTranspor
 socket.connect();
 socket.on('message', function(obj) {
     if ('post' in obj) {
-        if(obj.post.userId != userId)
             message(obj);
     } else {
         if ('announcement' in obj) {

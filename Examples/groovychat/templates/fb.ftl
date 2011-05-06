@@ -1,5 +1,3 @@
-<#-- @ftlvariable name="applicationId" type="String" -->
-<#-- @ftlvariable name="userName" type="String" -->
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:fb="http://www.facebook.com/2008/fbml">
@@ -8,18 +6,7 @@
       <title>Chat Demo with Facebook and Groovy Websockets</title>
 
   <#if user?? >
-      <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1/prototype.js"></script>
-
-      <script type="text/javascript" src="/swfobject.js"></script>
-      <script type="text/javascript" src="/FABridge.js"></script>
-      <script type="text/javascript" src="/web_socket.js"></script>
-
-      <script type="text/javascript">
-        WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
-      </script>
-
-      <script src="/json.js"></script> <!-- for ie -->
-      <script src="/socket.io.js"></script>
+      <#include "./include/iosocket.ftl">
 
       <script type="text/javascript">
           var accessToken = '${accessToken}'
@@ -29,12 +16,10 @@
       </script>
 
       <script type="text/javascript" src="js/application.js"></script>
-  <#else>
-      <script type="text/javascript">function load() {}</script>
   </#if>
 
   </head>
-  <body onload="load()">
+  <body>
   <table width="800px">
       <tr>
           <td valign=center>
