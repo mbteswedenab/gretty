@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.Executor
 import org.mbte.gretty.httpserver.GrettyHttpHandler
+import org.mbte.gretty.httpserver.SocketIO
+import org.mbte.gretty.httpserver.GrettyWebSocketEvent
 
 def facebook = new FacebookService()
 def server = new GrettyServer()
@@ -13,7 +15,7 @@ server.groovy = [
 
     localAddress: new InetSocketAddress(8081),
 
-    staticResources: "META-INF/web-socket-js",
+    staticResources: "META-INF/socket.io/",
 
     static: "./static",
 
@@ -23,7 +25,7 @@ server.groovy = [
 
     public: {
         get("/chat") {
-            def accessToken = FacebookService.accessToken(request, response)
+            def accessToken = facebook.accessToken(request, response)
 
             if(!accessToken) {
                 response.html = template("./templates/fb.ftl", [applicationId: FacebookService.applicationId])
@@ -39,26 +41,50 @@ server.groovy = [
             }
         }
 
-        websocket("/") { event ->
-            switch(event) {
-                case String:
-                    def cmd = Map.fromJson(event)
-                    switch(cmd.msgType) {
-                        case 'newPost':
-                            facebook.addEventToRecents cmd
-                            broadcast event
-                        break
+        iosocket("/chat", new ChatHistory()) {
+            onConnect {
+            }
 
-                        case 'getHistory':
-                            send ([events: facebook.recentEvents].toJsonString())
-                        break
+            onDisconnect {
+                if(socketPrivate)
+                    broadcast([announcement: "${socketPrivate} left".toString()])
+            }
+
+            onMessage { msg ->
+                if(msg.post) {
+                    socketShared.push msg
+                    broadcast msg
+                }
+                else if(msg.history) {
+                    if(!socketPrivate) {
+                        socketPrivate = msg.userName
+                        broadcast([announcement: "${socketPrivate} joined".toString()])
                     }
-                break
+                    send (buffer: socketShared.recent)
+                }
             }
         }
     }
 ]
 server.start ()
+
+class ChatHistory {
+    private LinkedList list = []
+
+    void push(Object o) {
+        synchronized(list) {
+            list.addLast o
+            if(list.size() >= 20)
+                list.removeFirst()
+        }
+    }
+
+    List getRecent() {
+        synchronized(list) {
+            list.clone()
+        }
+    }
+}
 
 class FacebookService {
     static def applicationId = "211731558851278"
@@ -87,33 +113,22 @@ class FacebookService {
     }
 
     void withUser (String accessToken, GrettyHttpHandler handler, Closure operation) {
-        def res = users[accessToken]
-        if(res)
-            operation(res)
+        def user = users[accessToken]
+        if(user)
+            operation(user)
         else
             handler.async(executor) {
                 use(JacksonCategory) {
-                    users[accessToken] = res = Map.fromJson("https://graph.facebook.com/me?access_token=$accessToken".toURL().text)
-                    println res
-                    operation(res)
+                    try {
+                        def text = "https://graph.facebook.com/me?access_token=$accessToken".toURL().text
+                        users[accessToken] = user = Map.fromJson(text)
+                    }
+                    catch(e) {
+                        users[accessToken] = null
+                    }
+
+                    operation(user)
                 }
             }
-    }
-
-    private def recents = new LinkedList()
-
-    void addEventToRecents(Object o) {
-        synchronized(recents) {
-            recents.addLast o
-            if(recents.size() >= 100)
-                recents.removeFirst()
-        }
-    }
-
-    List getRecentEvents() {
-        synchronized(recents) {
-            def res = recents.clone()
-            res
-        }
     }
 }

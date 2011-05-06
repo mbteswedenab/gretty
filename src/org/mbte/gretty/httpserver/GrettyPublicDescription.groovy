@@ -71,8 +71,12 @@ import org.codehaus.groovy.runtime.InvokerHelper
             connect(match, GrettyHttpHandler.fromClosure(handler))
         }
 
-        void websocket(String match, Closure handler) {
-            websocket(match, GrettyWebSocketHandler.fromClosure(handler))
+        void websocket(String match, def shared = null, Closure handler) {
+            websocket(match, shared, GrettyWebSocketHandler.fromClosure(handler))
+        }
+
+        public void iosocket(String match, def shared, Closure handler) {
+            iosocket(match, shared, GrettyIoSocketHandler.fromClosure(handler))
         }
     }
 
@@ -116,8 +120,21 @@ import org.codehaus.groovy.runtime.InvokerHelper
         context.addHandler(HttpMethod.CONNECT, match, handler)
     }
 
-    void websocket(String match, GrettyWebSocketHandler handler) {
-        context.addWebSocket(match, handler)
+    public <S> void websocket(String match, S shared = null, GrettyWebSocketHandler<S,Object> handler) {
+        websocket(match, shared, Object, handler)
+    }
+
+    public <S,P> void websocket(String match, S shared, Class<P> _private, GrettyWebSocketHandler<S,P> handler) {
+        context.addWebSocket(match, handler[socketShared: shared])
+    }
+
+    public <S,P> void iosocket(String match, S shared = null, GrettyIoSocketHandler<S,P> handler) {
+        iosocket(match, shared, Object, handler)
+    }
+
+    public <S,P> void iosocket(String match, S shared, Class<P> _private, GrettyIoSocketHandler<S,P> handler) {
+        websocket("$match/websocket",   shared, handler.clone())
+        websocket("$match/flashsocket", shared, handler.clone())
     }
 
     void rest(String match, GrettyRestDescription descr) {

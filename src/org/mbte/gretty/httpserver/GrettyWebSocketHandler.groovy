@@ -25,40 +25,50 @@ import org.jboss.netty.channel.ChannelEvent
 import org.jboss.netty.channel.MessageEvent
 import org.jboss.netty.handler.codec.http.websocket.WebSocketFrame
 import org.jboss.netty.channel.ChannelStateEvent
-import groovypp.channels.MessageChannel
-import org.jboss.netty.handler.codec.http.HttpMessageEncoder
+
 import org.jboss.netty.handler.codec.http.websocket.DefaultWebSocketFrame
 import org.jboss.netty.channel.ChannelState
 import org.mbte.gretty.JacksonCategory
 
-@Typed abstract class GrettyWebSocketHandler implements Cloneable {
+@Typed abstract class GrettyWebSocketHandler<S,P> implements Cloneable {
     protected GrettyServer server
 
-    private GrettyWebSocket socket
+    protected Connection socket
 
     protected ConcurrentHashMap<Channel,GrettyWebSocketHandler> allConnected = [:]
 
+    protected S socketShared
+
+    protected P socketPrivate
+
     protected String socketPath
 
-    /**
-     * @param message GrettyWebSocketEvent.CONNECT | GrettyWebSocketEvent.DISCONNECT | String
-     */
-    abstract void onEvent(Object message)
+    abstract void onMessage(Object message)
 
-    final void send(Object object) {
-        socket.channel.write(new DefaultWebSocketFrame(object.toString()))
+    protected void onConnect () {}
+
+    protected void onDisconnect () {}
+
+    protected void send(Object object) {
+        sendInternal(object)
     }
 
-    final void broadcast(Object object) {
+    protected void sendInternal(object) {
+        socket.channel.write(new DefaultWebSocketFrame(object?.toString()))
+    }
+
+    protected void broadcast(Object object) {
         for(e in allConnected.entrySet()) {
-            e.value.send object
+            e.value.sendInternal object
         }
     }
 
     protected void initConnection(ChannelHandlerContext ctx, GrettyHttpResponse response) {
         def channel = ctx.channel
-        socket = new GrettyWebSocket()[handler: this, channel: channel, executor: server.threadPool]
-        allConnected [channel] = this
+        if(!socket)
+            socket = createSocket(channel)
+        if(!allConnected.containsKey(channel))
+            allConnected [channel] = this
         channel.pipeline.addLast "websocket.handler", socket
 
         GrettyResponseEncoder enc = channel.pipeline.remove("http.response.encoder")
@@ -70,28 +80,105 @@ import org.mbte.gretty.JacksonCategory
         }
     }
 
-    private static class GrettyWebSocketHandlerAroundClosure extends GrettyWebSocketHandler {
-        Closure closure
+    protected Connection createSocket(Channel channel) {
+        def res = new Connection()[handler: this, channel: channel, executor: server.threadPool]
+        allConnected [channel] = this
+        return res
+    }
 
-        GrettyWebSocketHandlerAroundClosure(Closure closure) {
-            this.closure = closure
+    protected static class WrappedClosure extends HashMap<String,Closure> implements Cloneable {
+        Closure onConnectClosure, onDisconnectClosure, onMessageClosure
+
+        WrappedClosure(Closure closure) {
+            this.handler = handler
+
+            def that = this
+            closure.delegate = (GroovyObjectSupport)[
+                onMessage: { Closure define ->
+                    onMessageClosure = define
+                },
+
+                onConnect: { Closure define ->
+                    onConnectClosure = define
+                },
+
+                onDisconnect: { Closure define ->
+                    onDisconnectClosure = define
+                }
+            ]
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+            closure.run()
         }
 
-        void onEvent(Object message) {
+        void onMessage(Object message) {
             use(JacksonCategory) {
-                closure(message)
+                onMessageClosure?.call(message)
             }
+        }
+
+        void onConnect() {
+            use(JacksonCategory) {
+                onConnectClosure?.call()
+            }
+        }
+
+        void onDisconnect() {
+            use(JacksonCategory) {
+                onDisconnectClosure?.call()
+            }
+        }
+
+        WrappedClosure clone(GrettyWebSocketHandler handler) {
+            WrappedClosure cloned = super.clone ()
+            Closure clonedClosure
+
+            if(onMessageClosure) {
+                clonedClosure = onMessageClosure.clone ()
+                clonedClosure.delegate = handler
+                clonedClosure.resolveStrategy = Closure.DELEGATE_FIRST
+                cloned.onMessageClosure = clonedClosure
+            }
+
+            if(onConnectClosure) {
+                clonedClosure = onConnectClosure.clone ()
+                clonedClosure.delegate = handler
+                clonedClosure.resolveStrategy = Closure.DELEGATE_FIRST
+                cloned.onConnectClosure = clonedClosure
+            }
+
+            if(onDisconnectClosure) {
+                clonedClosure = onDisconnectClosure.clone ()
+                clonedClosure.delegate = handler
+                clonedClosure.resolveStrategy = Closure.DELEGATE_FIRST
+                cloned.onDisconnectClosure = clonedClosure
+            }
+
+            cloned
+        }
+    }
+
+    private static class GrettyWebSocketHandlerAroundClosure extends GrettyWebSocketHandler {
+        WrappedClosure wrapper
+
+        GrettyWebSocketHandlerAroundClosure(Closure closure) {
+            wrapper = [closure]
+        }
+
+        void onMessage(Object message) {
+            wrapper.onMessage message
+        }
+
+        void onConnect() {
+            wrapper.onConnect()
+        }
+
+        void onDisconnect() {
+            wrapper.onDisconnect()
         }
 
         GrettyWebSocketHandler clone() {
             GrettyWebSocketHandlerAroundClosure cloned = super.clone ()
-            Closure clonedClosure = closure.clone ()
-
-            cloned.closure = clonedClosure
-            clonedClosure.delegate = cloned
-            clonedClosure.resolveStrategy = Closure.DELEGATE_FIRST
-
-            cloned
+            cloned[wrapper: wrapper.clone(cloned)]
         }
     }
 
@@ -100,10 +187,10 @@ import org.mbte.gretty.JacksonCategory
     }
 
     GrettyWebSocketHandler clone() {
-        return super.clone()
+        ((GrettyWebSocketHandler)super.clone())[socketPrivate: null]
     }
 
-    private static class GrettyWebSocket extends ExecutingChannel implements ChannelUpstreamHandler {
+    private static class Connection extends ExecutingChannel implements ChannelUpstreamHandler {
         protected Channel channel
 
         private int connectStatus
@@ -117,26 +204,26 @@ import org.mbte.gretty.JacksonCategory
         protected void onMessage(Object message) {
             // it might happen that 1st message from other side came earlier than we received CONNECT
             if(message == GrettyWebSocketEvent.CONNECT) {
-                if(connectStatus) {
+                if(connectStatus == 0) {
                     connectStatus = 1
-                    handler.onEvent message
+                    handler.doOnConnect()
                 }
             }
             else {
                 if(message == GrettyWebSocketEvent.DISCONNECT) {
                     if(connectStatus == 1) {
                         connectStatus = 2
-                        handler.onEvent message
+                        handler.doOnDisconnect()
                     }
                 }
                 else {
                     if(connectStatus == 0) {
                         connectStatus = 1
-                        handler.onEvent GrettyWebSocketEvent.CONNECT
+                        handler.doOnConnect()
                     }
 
                     if(connectStatus == 1) {
-                        handler.onEvent message
+                        handler.doOnMessage(message)
                     }
                 }
             }
@@ -157,5 +244,17 @@ import org.mbte.gretty.JacksonCategory
                 break
             }
         }
+    }
+
+    protected void doOnMessage(Object message) {
+        onMessage(message)
+    }
+
+    protected void doOnDisconnect() {
+        onDisconnect()
+    }
+
+    protected void doOnConnect() {
+        onConnect()
     }
 }

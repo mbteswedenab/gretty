@@ -12,27 +12,23 @@ import java.util.concurrent.atomic.AtomicInteger
         server = [
             localAddress: new LocalAddress("test_server2"),
 
-            webContexts: [
-                "/" : [
-                    public: {
-                        websocket("/ws"){ event ->
-                            switch(event) {
-                                case String:
-                                    println "-- $event"
-                                    broadcast(event.toUpperCase())
-                                break
-
-                                case GrettyWebSocketEvent.CONNECT:
-                                    send("Welcome!")
-                                break
-
-                                case  GrettyWebSocketEvent.DISCONNECT:
-                                break
-                            }
-                        }
+            public: {
+                websocket("/ws"){ event ->
+                    onConnect: {
+                        send "Welcome"
                     }
-                ]
-            ]
+
+                    onDisconnect: {
+                    }
+
+                    switch(event) {
+                        case String:
+                            println "-- $event"
+                            broadcast(event.toUpperCase())
+                        break
+                    }
+                }
+            }
         ]
         server.start()
     }
@@ -78,6 +74,8 @@ import java.util.concurrent.atomic.AtomicInteger
     }
 
     void testMulti () {
+        Timer timer = []
+        AtomicInteger counter = []
         for(i in 0..<10) {
             CountDownLatch cdl = [1]
             GrettyWebsocketClient client = [

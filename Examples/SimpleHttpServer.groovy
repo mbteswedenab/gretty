@@ -3,7 +3,7 @@
 import org.mbte.gretty.httpserver.GrettyServer
 
 GrettyServer server = [
-    staticResources: "META-INF/web-socket-js",
+    staticResources: "META-INF/socket.io",
 
     localAddress: new InetSocketAddress("localhost", 8080),
 
