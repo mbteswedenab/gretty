@@ -176,7 +176,7 @@ import org.mbte.gretty.JacksonCategory
             wrapper.onDisconnect()
         }
 
-        GrettyWebSocketHandler clone() {
+        GrettyWebSocketHandlerAroundClosure clone() {
             GrettyWebSocketHandlerAroundClosure cloned = super.clone ()
             cloned[wrapper: wrapper.clone(cloned)]
         }
