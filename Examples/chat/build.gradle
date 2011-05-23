@@ -33,7 +33,7 @@ dependencies {
     compile group: 'org.mbte.groovypp', name: 'groovypp', version: "0.4.231_1.7.10"
 
     compile rootProject
-    compile group: 'com.hazelcast', name: 'hazelcast', version: '1.9.2.2'
+    compile group: 'com.hazelcast', name: 'hazelcast', version: '1.9.3'
     compile group: 'com.google.inject', name: 'guice', version: '3.0'
     compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.5.3'
     compile group: 'com.google.code.morphia', name: 'morphia', version: '0.99'
