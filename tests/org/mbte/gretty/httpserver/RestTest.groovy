@@ -1,15 +1,12 @@
 package org.mbte.gretty.httpserver
 
-import java.util.concurrent.CountDownLatch
 import org.jboss.netty.channel.local.LocalAddress
-import org.jboss.netty.handler.codec.http.HttpHeaders
+
 import org.jboss.netty.handler.codec.http.HttpMethod
 import org.jboss.netty.handler.codec.http.HttpResponseStatus
 import org.jboss.netty.handler.codec.http.HttpVersion
-import org.mbte.gretty.httpclient.LoadGenerator
-import org.mbte.gretty.httpclient.HttpClientPool
-import org.mbte.gretty.httpclient.GrettyClient
-import java.util.concurrent.atomic.AtomicInteger
+
+import org.mbte.gretty.httpclient.HttpRequestHelper
 
 @Typed(TypePolicy.MIXED) class RestTest extends GroovyTestCase implements HttpRequestHelper {
 

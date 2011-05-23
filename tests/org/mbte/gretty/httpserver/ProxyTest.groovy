@@ -4,6 +4,7 @@ import org.jboss.netty.channel.local.LocalAddress
 import org.mbte.gretty.httpclient.GrettyWebsocketClient
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
+import org.mbte.gretty.httpclient.HttpRequestHelper
 
 @Typed class ProxyTest extends GroovyTestCase implements HttpRequestHelper {
 

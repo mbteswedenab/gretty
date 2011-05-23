@@ -2,6 +2,7 @@ package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.local.LocalAddress
 import org.jboss.netty.handler.codec.http.HttpMethod
+import org.mbte.gretty.httpclient.HttpRequestHelper
 
 @Typed class ServerTest extends GroovyTestCase implements HttpRequestHelper {
 

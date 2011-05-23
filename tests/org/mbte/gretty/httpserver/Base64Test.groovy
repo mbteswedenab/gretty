@@ -19,12 +19,13 @@ package org.mbte.gretty.httpserver
 import org.jboss.netty.buffer.ChannelBuffers
 import org.jboss.netty.handler.codec.base64.Base64
 import org.jboss.netty.channel.local.LocalAddress
-import org.jboss.netty.handler.codec.http.HttpResponseStatus
+
 import org.jboss.netty.handler.codec.http.HttpVersion
 import org.jboss.netty.handler.codec.http.HttpMethod
 import org.jboss.netty.handler.codec.http.HttpHeaders
+import org.mbte.gretty.httpclient.HttpRequestHelper
 
-@Typed class Base64Test extends GroovyTestCase implements org.mbte.gretty.httpserver.HttpRequestHelper {
+@Typed class Base64Test extends GroovyTestCase implements HttpRequestHelper {
     private GrettyServer server
 
     protected void setUp() {

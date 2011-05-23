@@ -9,10 +9,10 @@
                         $('key').value = ''
                         $('operation').value = 'get'
                     }
-                    new Ajax.Request("/api/" + $('key').value, {
-                        method: $('operation').value,
+                    new Ajax.Request("/" + $('api').value + "/" + $('operation').value + "/" + $('key').value, {
+                        method: $('operation').value == 'put' ? 'post' : 'get',
                         contentType: "application/text",
-                        postBody: $('operation').value == 'post' ? $('value').value : '',
+                        postBody: $('operation').value == 'put' ? $('value').value : '',
                         onSuccess: function(response) {
                             alert(response.responseJSON.result)
                         }
@@ -30,10 +30,20 @@
         <form onsubmit="submitForm(); return false;">
             <table>
                 <tr>
+                    <td align="right"><label>API:</label></td>
+                    <td>
+                        <select id="api">
+                            <option value="api">api</option>
+                            <option value="api2">api2</option>
+                            <option value="api3">api3</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
                     <td align="right"><label>Operation:</label></td>
                     <td>
                         <select id="operation">
-                            <option value="post">Set</option>
+                            <option value="put">Set</option>
                             <option value="get">Get</option>
                             <option value="delete">Remove</option>
                             <option value="getAll">Get all</option>
