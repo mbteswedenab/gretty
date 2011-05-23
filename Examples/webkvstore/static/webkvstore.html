@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <title>WebKVStore test</title>
+        <script type="text/javascript" src="/googlib/prototype/1.6.1/prototype.js"></script>
+        <script type="text/javascript">
+            function submitForm () {
+                try {
+                    if($('operation').value == 'getAll') {
+                        $('key').value = ''
+                        $('operation').value = 'get'
+                    }
+                    new Ajax.Request("/api/" + $('key').value, {
+                        method: $('operation').value,
+                        contentType: "application/text",
+                        postBody: $('operation').value == 'post' ? $('value').value : '',
+                        onSuccess: function(response) {
+                            alert(response.responseJSON.result)
+                        }
+                    })
+                }
+                catch(e) {
+                    alert(e)
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <h1>KV Store demo</h1>
+        <p>Select operation, provide data and submit the form</p>
+        <form onsubmit="submitForm(); return false;">
+            <table>
+                <tr>
+                    <td align="right"><label>Operation:</label></td>
+                    <td>
+                        <select id="operation">
+                            <option value="post">Set</option>
+                            <option value="get">Get</option>
+                            <option value="delete">Remove</option>
+                            <option value="getAll">Get all</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right"><label>Key:</label></td>
+                    <td><input type="text" maxlength="100" id="key" size="100"></td>
+                </tr>
+                <tr>
+                    <td  align="right"><label>Value:</label></td>
+                    <td><input type="text" maxlength="100" id="value" size="100"></td>
+                </tr>
+                <tr>
+                    <td colspan="2" align="right">
+                        <input type="submit">
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </body>
+</html>
