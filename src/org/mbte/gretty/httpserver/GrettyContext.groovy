@@ -71,7 +71,14 @@ import org.jboss.netty.handler.codec.http.HttpMethod
             return
         }
 
-        def methodHandlers = handlers [request.method]
+        def override = request.getHeader('X-HTTP-Method-Override')
+        if(override) {
+            override = HttpMethod.valueOf(override)
+        }
+        else {
+            override = request.method
+        }
+        def methodHandlers = handlers [override]
 
         for(matcher in methodHandlers) {
             def pathArgs = matcher.doesMatch(localUri)
@@ -192,13 +199,14 @@ import org.jboss.netty.handler.codec.http.HttpMethod
         description.run ()
     }
 
-    void addHandler(HttpMethod httpMethod, String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler addHandler(HttpMethod httpMethod, String match, GrettyHttpHandler handler) {
         def methodHandlers = handlers [httpMethod]
         if (!methodHandlers) {
             methodHandlers = []
             handlers [httpMethod] = methodHandlers
         }
         methodHandlers.add((HandlerMatcher)[match: match, handler: handler])
+        handler
     }
 
     void addWebSocket(String path, GrettyWebSocketHandler handler) {

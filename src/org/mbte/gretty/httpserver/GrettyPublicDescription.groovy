@@ -84,39 +84,39 @@ import org.codehaus.groovy.runtime.InvokerHelper
         new GrettyPublicDescriptionAroundClosure(closure)
     }
 
-    void options(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler options(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.OPTIONS, match, handler)
     }
 
-    void get(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler get(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.GET, match, handler)
     }
 
-    void head(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler head(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.HEAD, match, handler)
     }
 
-    void post(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler post(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.POST, match, handler)
     }
 
-    void put(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler put(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.PUT, match, handler)
     }
 
-    void patch(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler patch(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.PATCH, match, handler)
     }
 
-    void delete(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler delete(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.DELETE, match, handler)
     }
 
-    void trace(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler trace(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.TRACE, match, handler)
     }
 
-    void connect(String match, GrettyHttpHandler handler) {
+    GrettyHttpHandler connect(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.CONNECT, match, handler)
     }
 

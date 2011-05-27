@@ -9,7 +9,7 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
 
 @Trait abstract class HttpRequestHelper {
 
-    void doTest (String request, Function1<HttpResponse,Void> action) {
+    void doTest (String request, Function1<GrettyHttpResponse,Void> action) {
         doTest([uri:request], action)
     }
 

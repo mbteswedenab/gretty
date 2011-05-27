@@ -148,4 +148,9 @@ class GrettyHttpRequest extends DefaultHttpRequest {
     boolean followRedirects () {
         followRedirects
     }
+
+    void setMethodOverride(HttpMethod newMethod) {
+        method = HttpMethod.POST
+        addHeader("X-HTTP-Method-Override", newMethod)
+    }
 }

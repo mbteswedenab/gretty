@@ -69,7 +69,7 @@ import java.nio.channels.ClosedChannelException
     void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
         GrettyHttpResponse resp = e.message
         def pending = pendingRequest.getAndSet(null)
-        if(pending.first.followRedirects() && resp.status == HttpResponseStatus.FOUND || resp.status == HttpResponseStatus.MOVED_PERMANENTLY) {
+        if(pending.first.followRedirects() && (resp.status == HttpResponseStatus.FOUND || resp.status == HttpResponseStatus.MOVED_PERMANENTLY)) {
             URL url = [resp.getHeader(HttpHeaders.Names.LOCATION)]
 
             def redirectAddress = new InetSocketAddress(url.host, url.port != -1 ? url.port : 80)

@@ -10,6 +10,7 @@ import org.jboss.netty.handler.codec.http.HttpVersion
 import org.mbte.gretty.httpserver.GrettyHttpRequest
 import junit.textui.TestRunner
 import org.mbte.gretty.JacksonCategory
+import org.w3c.dom.Text
 
 ConcurrentHashMap map = [:]
 

@@ -23,10 +23,13 @@ import org.mbte.gretty.JacksonCategory
 import groovypp.concurrent.BindLater
 import groovypp.concurrent.CallLater
 import java.util.concurrent.Executor
+import org.jboss.netty.handler.codec.http.HttpResponseStatus
 
 @Typed
 @Use(JacksonCategory)
 abstract class GrettyHttpHandler implements Cloneable {
+    static ThreadLocal<GrettyHttpHandler> grettyHandler = []
+
     GrettyHttpRequest  request
     GrettyHttpResponse response
     GrettyServer       server
@@ -76,7 +79,15 @@ abstract class GrettyHttpHandler implements Cloneable {
         GrettyHttpHandler clone = clone ()
         clone.request  = request
         clone.response = response
-        clone.handle (pathArgs)
+
+        def saved = grettyHandler.get()
+        grettyHandler.set(clone)
+        try {
+            clone.handle (pathArgs)
+        }
+        finally {
+            grettyHandler.set(saved)
+        }
     }
 
     final void execute(Runnable command) {
@@ -114,6 +125,21 @@ abstract class GrettyHttpHandler implements Cloneable {
         def writer = new StringWriter()
         template.process (root, writer, ObjectWrapper.BEANS_WRAPPER)
         writer.toString()
+    }
+
+    Function1 asyncFunction(Function1 f) {
+        response.async.incrementAndGet()
+        return { t ->
+            try {
+                f(t)
+            }
+            catch(e) {
+                response[text: e.message, status: HttpResponseStatus.INTERNAL_SERVER_ERROR]
+            }
+
+            if(!response.async.decrementAndGet())
+                response.complete()
+        }
     }
 
     abstract void handle(Map<String,String> pathArguments)

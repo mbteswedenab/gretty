@@ -26,6 +26,7 @@ import org.jboss.netty.channel.MessageEvent
 import org.jboss.netty.channel.Channels
 import org.jboss.netty.handler.stream.ChunkedStream
 import org.jboss.netty.buffer.ChannelBuffers
+import org.jboss.netty.channel.local.LocalAddress
 
 @Typed class FileWriteHandler implements ChannelDownstreamHandler {
     public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent evt) throws Exception {
@@ -34,7 +35,7 @@ import org.jboss.netty.buffer.ChannelBuffers
                 def msg = evt.message
                 switch(msg) {
                     case File:
-                        if (evt.channel.pipeline.get(SslHandler.class) != null) {
+                        if (evt.channel.pipeline.get(SslHandler.class) != null || evt.channel.localAddress instanceof LocalAddress) {
                             Channels.write(ctx, evt.future, new ChunkedFile(msg, 8192), evt.remoteAddress)
                         } else {
                             RandomAccessFile ras = [msg, "r"]
