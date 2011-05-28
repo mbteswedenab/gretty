@@ -32,6 +32,7 @@ import org.jboss.netty.handler.codec.http.websocket.WebSocketFrameDecoder
 import org.jboss.netty.channel.ChannelFuture
 import org.jboss.netty.channel.ChannelFactory
 import org.jboss.netty.channel.Channels
+import org.mbte.gretty.JacksonCategory
 
 @Typed class GrettyWebsocketClient extends AbstractHttpClient {
     private final String path
@@ -82,6 +83,10 @@ import org.jboss.netty.channel.Channels
 
     void send(String textData) {
         channel?.write(new DefaultWebSocketFrame(textData))
+    }
+
+    void sendJson(data) {
+        send(JacksonCategory.toJsonString(data))
     }
 
     void disconnect() {

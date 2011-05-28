@@ -53,6 +53,10 @@ import org.mbte.gretty.JacksonCategory
         sendInternal(object)
     }
 
+    protected void sendJson(data) {
+        send(JacksonCategory.toJsonString(data))
+    }
+
     protected void sendInternal(object) {
         socket.channel.write(new DefaultWebSocketFrame(object?.toString()))
     }

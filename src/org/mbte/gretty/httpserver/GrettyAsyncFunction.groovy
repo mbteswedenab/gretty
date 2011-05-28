@@ -29,7 +29,8 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus
 
     static GrettyHttpHandler initHandler() {
         def handler = GrettyHttpHandler.grettyHandler.get()
-        handler.response.async.incrementAndGet ()
+        if(handler)
+            handler.response.async.incrementAndGet ()
         handler
     }
 
@@ -40,13 +41,15 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus
             doAsyncAction(t)
         }
         catch(e) {
-            response.text = e.message
-            response.status = HttpResponseStatus.INTERNAL_SERVER_ERROR
+            if(handler) {
+                handler.response.text = e.message
+                handler.response.status = HttpResponseStatus.INTERNAL_SERVER_ERROR
+            }
         }
 
         GrettyHttpHandler.grettyHandler.set(null)
-        if(!response.async.decrementAndGet())
-            response.complete()
+        if(handler && !handler.response.async.decrementAndGet())
+            handler.response.complete()
     }
 }
 
