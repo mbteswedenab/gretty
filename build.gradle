@@ -19,9 +19,9 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'org.mbte.groovypp'
-version = '0.4.246'
+version = '0.4.250'
 
-def gppVersion = '0.4.246_1.7.10'
+def gppVersion = '0.4.250_1.7.10'
 
 repositories {
   mavenCentral ()
