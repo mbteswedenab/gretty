@@ -299,6 +299,7 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
                        if(map == null)
                             map = [:]
                        map[m.substring(1)] = uri
+                       uri = ''
                        break
                    }
                    else {
@@ -319,6 +320,9 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
                       return null
                 }
             }
+
+            if(uri.length() > 0)
+                return null
 
             return map == null ? Collections.emptyMap () : map
         }

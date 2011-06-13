@@ -6,7 +6,7 @@
       <title>Chat Demo with Facebook and Groovy Websockets</title>
 
   <#if user?? >
-      <#include "./include/iosocket.ftl">
+      <#include "include/iosocket.ftl">
 
       <script type="text/javascript">
           var accessToken = '${accessToken}'
@@ -55,6 +55,6 @@
     #warning {border: 2px solid #eee; background: #f4a460; width: 800px; padding: 6px; font: 17px Helvetica, Arial; }
   </style>
 
-    <#include "./include/fbroot.ftl">
+    <#include "include/fbroot.ftl">
   </body>
 </html>

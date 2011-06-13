@@ -63,7 +63,7 @@ abstract class GrettyHttpHandler implements Cloneable {
         }
 
         final String template(String file, Map root, Closure dataBinding = null) {
-            Function1<Map, Void> function1 = { binding -> dataBinding.call(binding); return null }
+            Function1<Map, Object> function1 = { binding -> dataBinding.call(binding); return null }
             template(file, root, function1 )
         }
 
@@ -121,7 +121,7 @@ abstract class GrettyHttpHandler implements Cloneable {
         response.redirect(where)
     }
 
-    String template(String file, Map root = [:], Function1<Map,Void> dataBinding = null) {
+    String template(String file, Map root = [:], Function1<Map,Object> dataBinding = null) {
         root.request = request
 
         dataBinding?.call(root)

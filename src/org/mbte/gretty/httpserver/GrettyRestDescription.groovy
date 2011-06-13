@@ -22,6 +22,56 @@ import org.jboss.netty.handler.codec.http.HttpMethod
     GrettyContext context
     String        match
 
+    private static class GrettyRestDescriptionAroundClosure extends GrettyRestDescription {
+        Closure closure
+
+        GrettyRestDescriptionAroundClosure(Closure closure) {
+            this.closure = closure
+            closure.delegate = this
+            closure.resolveStrategy = Closure.DELEGATE_FIRST
+        }
+
+        void run () {
+            closure.run ()
+        }
+
+        void options(Closure handler) {
+            options(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void get(Closure handler) {
+            get(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void head(Closure handler) {
+            head(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void post(Closure handler) {
+            post(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void put(Closure handler) {
+            put(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void patch(Closure handler) {
+            patch(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void delete(Closure handler) {
+            delete(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void trace(Closure handler) {
+            trace(GrettyHttpHandler.fromClosure(handler))
+        }
+
+        void connect(Closure handler) {
+            connect(GrettyHttpHandler.fromClosure(handler))
+        }
+    }
+
     void options(GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.OPTIONS, match, handler)
     }
@@ -56,5 +106,9 @@ import org.jboss.netty.handler.codec.http.HttpMethod
 
     void connect(GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.CONNECT, match, handler)
+    }
+
+    static GrettyRestDescription fromClosure(Closure closure) {
+        new GrettyRestDescriptionAroundClosure(closure)
     }
 }

@@ -1,0 +1,16 @@
+<html>
+    <head>
+        <title>${title}</title>
+        <%
+            List jsScripts = this.jsScripts
+            for(script in jsScripts) {
+        %>
+            <script type="" src="${script}"></script>
+        <%
+            }
+        %>
+    </head>
+    <body>
+        ${message}
+    </body>
+</html>

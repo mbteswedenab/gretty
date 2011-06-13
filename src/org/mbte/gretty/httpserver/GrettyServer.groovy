@@ -112,8 +112,10 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
         def mc = InvokerHelper.getMetaClass(this.class)
         for(e in properties.entrySet()) {
             def property = mc.getMetaProperty(e.key)
-            if(!property)
-                throw new RuntimeException("No such property '${e.key}'")
+            if(!property && e.value instanceof Closure) {
+                setUnresolvedProperty(e.key, GrettyRestDescription.fromClosure((Closure)e.value))
+                return
+            }
 
             if(e.value instanceof GeneratedClosure) {
                 property.setProperty(this, property.type.getDeclaredMethod("fromClosure", Closure).invoke(null, e.value))
