@@ -32,4 +32,12 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
         cdl.get()
         client.disconnect ()
     }
+
+    void doTest (String request, Closure action) {
+        doTest(request, { req -> action(req) } )
+    }
+
+    void doTest (GrettyHttpRequest request, Closure action) {
+        doTest(request, { req -> action(req) } )
+    }
 }

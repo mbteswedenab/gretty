@@ -27,16 +27,24 @@ import groovypp.concurrent.BindLater
 import groovypp.concurrent.CallLater
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.GeneratedClosure
+import org.mbte.gretty.httpserver.session.GrettySessionManager
+import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
 
 @Typed class GrettyServer extends AbstractServer {
     GrettyContext defaultContext
 
-    InternalLogLevel logLevel
+    GrettySessionManager sessionManager
 
-    Map<String,GrettyContext> webContexts = [:]
+    InternalLogLevel logLevel
 
     GrettyServer() {
         localAddress = new InetSocketAddress(8080)
+    }
+
+    void setUnresolvedProperty(String name, GrettyRestDescription description) {
+        if(!defaultContext)
+            defaultContext = []
+        defaultContext.setUnresolvedProperty(name, description)
     }
 
     void setDefault (GrettyHttpHandler handler) {
@@ -57,35 +65,22 @@ import org.codehaus.groovy.runtime.GeneratedClosure
         defaultContext.staticResources = staticResources
     }
 
-
     void setPublic (GrettyPublicDescription description) {
         if(!defaultContext)
             defaultContext = []
         defaultContext.public = description
     }
 
-    private void initContexts () {
-        if(defaultContext) {
-            if(!webContexts["/"])
-                webContexts["/"] = defaultContext
-            else {
-                if(!webContexts["/"].defaultHandler)
-                    webContexts["/"].defaultHandler = defaultContext.defaultHandler
-                else
-                    throw new IllegalStateException("Default handler already set")
-            }
-
-            defaultContext = null
-        }
-        webContexts = webContexts.sort { me1, me2 -> me2.key <=> me1.key }
-
-        for(e in webContexts.entrySet()) {
-            e.value.initContext(e.key, this)
-        }
+    void setWebContexts(Map<String,GrettyContext> webContexts) {
+        if(!defaultContext)
+            defaultContext = []
+        defaultContext.webContexts = webContexts
     }
 
     void start () {
-        initContexts ()
+        if(!defaultContext)
+            throw new IllegalStateException("No root context configured")
+        defaultContext.initContext ("/", null, this)
         super.start ()
     }
 

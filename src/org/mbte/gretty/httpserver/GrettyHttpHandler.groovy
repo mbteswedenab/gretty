@@ -16,14 +16,13 @@
 
 package org.mbte.gretty.httpserver
 
-import freemarker.template.Configuration
-import freemarker.template.ObjectWrapper
-import org.codehaus.jackson.map.ObjectMapper
 import org.mbte.gretty.JacksonCategory
 import groovypp.concurrent.BindLater
 import groovypp.concurrent.CallLater
 import java.util.concurrent.Executor
 import org.jboss.netty.handler.codec.http.HttpResponseStatus
+import org.mbte.gretty.httpserver.template.GrettyTemplateScript
+import groovypp.text.FastStringWriter
 
 @Typed
 @Use(JacksonCategory)
@@ -32,6 +31,7 @@ abstract class GrettyHttpHandler implements Cloneable {
 
     GrettyHttpRequest  request
     GrettyHttpResponse response
+    GrettyContext      context
     GrettyServer       server
 
     private static class GrettyHttpHandlerAroundClosure extends GrettyHttpHandler {
@@ -58,8 +58,13 @@ abstract class GrettyHttpHandler implements Cloneable {
             cloned
         }
 
-        final String template(String file, Map root = [:], Closure dataBinding) {
-            template(file, root, (Function1<Map,Void>){ binding -> dataBinding(binding) } )
+        final String template(String file, Closure dataBinding = null) {
+            template(file, [:], dataBinding )
+        }
+
+        final String template(String file, Map root, Closure dataBinding = null) {
+            Function1<Map, Void> function1 = { binding -> dataBinding.call(binding); return null }
+            template(file, root, function1 )
         }
 
         GrettyHttpHandler getThisHandler () {
@@ -116,14 +121,15 @@ abstract class GrettyHttpHandler implements Cloneable {
         response.redirect(where)
     }
 
-    final String template(String file, Map root = [:], Function1<Map,Void> dataBinding = null) {
+    String template(String file, Map root = [:], Function1<Map,Void> dataBinding = null) {
         root.request = request
 
         dataBinding?.call(root)
 
-        def template = Configuration.getDefaultConfiguration().getTemplate(file)
-        def writer = new StringWriter()
-        template.process (root, writer, ObjectWrapper.BEANS_WRAPPER)
+        def template = context.templateEngine.getTemplateClass([file])
+        GrettyTemplateScript script = template.newInstance() [grettyHttpHandler: this]
+        def writer = new FastStringWriter()
+        script.writeTo(root, writer)
         writer.toString()
     }
 

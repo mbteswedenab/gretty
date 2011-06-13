@@ -22,32 +22,32 @@ import org.jboss.netty.handler.codec.http.HttpVersion
 
 @Typed class RedirectTest extends GroovyTestCase {
     void testGoogle () {
-        GrettyClient client = [new InetSocketAddress("www.google.com", 80)]
-        client.connect().await()
-
-        GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, ""]
-        req.keepAlive()
-
-        client.request(req).get()
+//        GrettyClient client = [new InetSocketAddress("www.google.com", 80)]
+//        client.connect().await()
+//
+//        GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, ""]
+//        req.keepAlive()
+//
+//        client.request(req).get()
     }
 
     void testGoogle2 () {
-        GrettyClient client = [new InetSocketAddress("www.google.com", 80)]
-        client.connect().await()
-
-        GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/"]
-        req.keepAlive()
-
-        client.request(req).get()
+//        GrettyClient client = [new InetSocketAddress("www.google.com", 80)]
+//        client.connect().await()
+//
+//        GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/"]
+//        req.keepAlive()
+//
+//        client.request(req).get()
     }
 
     void testMicrosoft () {
-        GrettyClient client = [new InetSocketAddress("www.microsoft.com", 80)]
-        client.connect().await()
-
-        GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/"]
-        req.keepAlive()
-
-        client.request(req).get()
+//        GrettyClient client = [new InetSocketAddress("www.microsoft.com", 80)]
+//        client.connect().await()
+//
+//        GrettyHttpRequest req = [HttpVersion.HTTP_1_0, HttpMethod.GET, "/"]
+//        req.keepAlive()
+//
+//        client.request(req).get()
     }
 }

@@ -24,23 +24,64 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*
 
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*
 import org.jboss.netty.handler.codec.http.HttpMethod
+import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match
+import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
 
+/**
+ * Corresponds to sub-path of application.
+ */
 @Typed class GrettyContext {
-    String               staticFiles
-    String               staticResources
-    ClassLoader          staticResourcesClassLoader = this.class.classLoader
+    /**
+     * Class loader for templates
+     */
+    GrettyTemplateEngine templateEngine = [this.class.classLoader]
+
+    /**
+     * Server this context belongs too
+     */
+    protected GrettyServer server
+
+    /**
+     * Parent context. All paths are relative to that context
+     */
+    protected GrettyContext parentContext
+
+    /**
+     * Sub-path corresponding to this context
+     */
     protected String     webPath
 
-    ClassLoader          classLoader
-    String               classLoaderPath
+    /**
+     * Path where to find static files for this context
+     */
+    protected String     staticFiles
 
-    GrettyServer server
+    /**
+     * Path for static resources to be searched in class path
+     */
+    String               staticResources
 
-    GrettyHttpHandler defaultHandler
+    /**
+     * Class loader for static resources
+     */
+    ClassLoader          staticResourcesClassLoader = this.class.classLoader
+
+    /**
+     * Default handler for this context. Used if no static file/resource or more specific handler found
+     */
+    protected GrettyHttpHandler defaultHandler
 
     protected Map<String,GrettyWebSocketHandler> webSockets = [:]
 
     private Map<HttpMethod,List<HandlerMatcher>> handlers = [:]
+
+    protected Map<String,GrettyContext> webContexts = [:]
+
+    protected GrettyContext findContext(String uri) {
+        if(uri.startsWith(webPath)) {
+            webContexts.entrySet().find { wc -> uri.startsWith(wc.key) }?.value ?: this
+        }
+    }
 
     void handleHttpRequest(GrettyHttpRequest request, GrettyHttpResponse response) {
         def localUri = URLDecoder.decode(request.uri, "UTF-8").substring(webPath?.length())
@@ -93,22 +134,38 @@ import org.jboss.netty.handler.codec.http.HttpMethod
             return
         }
 
+        if (parentContext?.defaultHandler) {
+            parentContext.defaultHandler.handle(request, response, Collections.emptyMap())
+            return
+        }
+
         response.status = NOT_FOUND
         response.setHeader(HttpHeaders.Names.CONTENT_TYPE, "text/plain; charset=UTF-8")
         response.responseBody = "Failure: ${NOT_FOUND}\r\n"
     }
 
-    public void initContext (String path, GrettyServer server) {
+    public void initContext (String path, GrettyContext parentContext, GrettyServer server) {
         this.server = server
+        this.parentContext = parentContext
+
         webPath = path.endsWith("/") ? path.substring(0,path.length()-1) : path
+
+        if(!staticFiles && parentContext?.staticFiles) {
+            staticFiles = (parentContext.staticFiles + "/" + webPath).replace('/', File.separatorChar)
+        }
+
+        if(!staticResources && parentContext?.staticResources) {
+            staticResources = (parentContext.staticResources + "/" + webPath).replace('/', File.separatorChar)
+        }
 
         if(staticFiles) {
             def file = new File(staticFiles).canonicalFile
             if(!file.exists() || !file.directory || file.hidden) {
                 throw new IOException("directory $staticFiles does not exists or hidden")
             }
-
-            staticFiles = file.absoluteFile.canonicalPath
+            else {
+                staticFiles = file.absoluteFile.canonicalPath
+            }
         }
 
         if (webSockets) {
@@ -119,11 +176,21 @@ import org.jboss.netty.handler.codec.http.HttpMethod
         }
 
         for(matcherList in handlers.values())
-            for(matcher in matcherList)
+            for(matcher in matcherList) {
                 matcher.handler.server = server
+                matcher.handler.context = this
+            }
 
-        if(defaultHandler)
+        if(defaultHandler) {
             defaultHandler.server = server
+            defaultHandler.context = this
+        }
+
+        webContexts = webContexts.sort { me1, me2 -> me2.key <=> me1.key }
+
+        for(e in webContexts.entrySet()) {
+            e.value.initContext(e.key, this, server)
+        }
     }
 
     private Pair<File, HttpResponseStatus> findStaticFile(String uri) {
@@ -212,6 +279,10 @@ import org.jboss.netty.handler.codec.http.HttpMethod
     void addWebSocket(String path, GrettyWebSocketHandler handler) {
         handler.socketPath = path
         webSockets [path] = handler
+    }
+
+    void setUnresolvedProperty(String name, GrettyRestDescription description) {
+        description[match:name, context: this].run ()
     }
 
     private static final class HandlerMatcher {

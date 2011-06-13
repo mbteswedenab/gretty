@@ -84,6 +84,10 @@ import org.codehaus.groovy.runtime.InvokerHelper
         new GrettyPublicDescriptionAroundClosure(closure)
     }
 
+    void invokeUnresolvedMethod(String name, GrettyContext childContext) {
+        context.webContexts[name] = childContext
+    }
+
     GrettyHttpHandler options(String match, GrettyHttpHandler handler) {
         context.addHandler(HttpMethod.OPTIONS, match, handler)
     }

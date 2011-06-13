@@ -45,12 +45,10 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(GrettyAppHandler)
 
-    Map<String,GrettyContext> webContexts
     final GrettyServer server
 
     GrettyAppHandler(GrettyServer server) {
         this.server = server
-        this.webContexts = server.webContexts
     }
 
     def void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
@@ -91,8 +89,7 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
     }
 
     private void handleHttpRequest(GrettyHttpRequest request, MessageEvent e) {
-        GrettyHttpResponse response = [e.channel, isKeepAlive(request)]
-        response.protocolVersion = request.protocolVersion
+        GrettyHttpResponse response = [e.channel, isKeepAlive(request)][protocolVersion: request.protocolVersion]
         def uri = request.path
 
         response.async.incrementAndGet()
@@ -104,7 +101,7 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
     }
 
     private GrettyContext findContext(String uri) {
-        webContexts.entrySet().find { wc -> uri.startsWith(wc.key) }?.value
+        server.defaultContext.findContext(uri)
     }
 
     private void handleWebSocketRequest(ChannelHandlerContext ctx, MessageEvent e) {
