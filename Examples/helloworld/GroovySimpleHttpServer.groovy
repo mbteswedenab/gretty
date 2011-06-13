@@ -22,6 +22,8 @@ GrettyServer server = []
 server.groovy = [
     localAddress: new InetSocketAddress("localhost", 8080),
 
+    static: "static",
+
     default: {
         response.redirect "/"
     },

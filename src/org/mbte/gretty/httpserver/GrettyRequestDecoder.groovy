@@ -23,7 +23,7 @@ import org.jboss.netty.handler.codec.http.HttpMessage
 import org.jboss.netty.handler.codec.http.HttpRequestDecoder
 import org.jboss.netty.handler.codec.http.HttpMethod
 
-public class GrettyRequestDecoder extends HttpRequestDecoder {
+@Typed public class GrettyRequestDecoder extends HttpRequestDecoder {
 
     @Override
     protected HttpMessage createMessage(String[] initialLine) throws Exception{

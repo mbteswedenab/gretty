@@ -11,6 +11,7 @@
         %>
     </head>
     <body>
-        ${message}
+        ${message}(from template)<br>
+        <a href="/gindex.html">Hello, World! (from static file)</a>
     </body>
 </html>
