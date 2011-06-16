@@ -17,13 +17,17 @@
 package org.mbte.gretty.httpserver
 
 import org.mbte.gretty.httpclient.HttpRequestHelper
+import org.jboss.netty.channel.local.LocalAddress
 
 @Typed abstract class GrettyServerTestCase extends GroovyTestCase implements HttpRequestHelper {
     protected GrettyServer server
 
     protected void setUp() {
         super.setUp()
+
         buildServer()
+        server.localAddress =  new LocalAddress("test_server")
+
         server.start()
     }
 

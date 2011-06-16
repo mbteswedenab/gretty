@@ -95,7 +95,7 @@ class FacebookService {
     static String accessToken(GrettyHttpRequest request, GrettyHttpResponse response) {
         String accessToken
         def cookieName = "fbs_$applicationId"
-        def fbCookie = request.cookies."$cookieName"
+        def fbCookie = request.getCookie(cookieName)
         if(fbCookie) {
             for(t in fbCookie[0].value.tokenize('&')) {
                 if(t.startsWith("access_token")) {

@@ -19,14 +19,13 @@ package org.mbte.gretty.httpserver
 import org.jboss.netty.channel.local.LocalAddress
 import org.jboss.netty.handler.codec.http.HttpMethod
 import org.mbte.gretty.httpclient.HttpRequestHelper
-import com.sun.org.apache.xalan.internal.xsltc.compiler.Template
 
 class TemplateTest extends GrettyServerTestCase {
 
     protected void buildServer() {
         File root = ["."]
         root = root.canonicalFile
-        def tempFile = File.createTempFile("temp_", "_script", root)
+        def tempFile = File.createTempFile("temp_", "_script.gpptl", root)
         tempFile.text = """\
 Request path: \${request.uri}\
 URI: \$uri\
@@ -35,12 +34,16 @@ URI: \$uri\
 %>"""
         tempFile.deleteOnExit()
 
+        def tempFile2 = File.createTempFile("temp_", "_script.groovy", root)
+        tempFile2.text = """\
+        out.print request.path.toUpperCase()
+"""
+        tempFile.deleteOnExit()
+
         server = new GrettyServer ()
         server.groovy = [
-            localAddress: new LocalAddress("test_server"),
-
             default: {
-                response.text = template(tempFile.absolutePath) { binding ->
+                response.text = template(request.path.endsWith("lala") ? tempFile.absolutePath : tempFile2.absolutePath) { binding ->
                     binding.uri = request.uri.toUpperCase ()
                 }
             }
@@ -52,6 +55,13 @@ URI: \$uri\
         doTest(req) { GrettyHttpResponse response ->
             assert response.contentText == "Request path: /template/lalaURI: /TEMPLATE/LALA"
             assert response.getHeader("Template") == "true"
+        }
+    }
+
+    void testScript() {
+        GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/template/mama"]
+        doTest(req) { GrettyHttpResponse response ->
+            assert response.contentText == "/TEMPLATE/MAMA"
         }
     }
 }

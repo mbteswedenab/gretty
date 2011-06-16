@@ -1,7 +1,7 @@
 @Typed package examples
 
 import org.mbte.gretty.httpserver.GrettyServer
-import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion.Static
+import org.mbte.gretty.httpserver.GrettyContext
 
 GrettyServer server = [
     localAddress: new InetSocketAddress("localhost", 8080),
@@ -10,15 +10,19 @@ GrettyServer server = [
         response.redirect "/"
     },
 
-    static: "static",
+    dir: "web",
 
     "/": {
         get {
-            response.html = template("templates/main.gpptl", [:]) { binding ->
+            response.html = template("web/templates/main.gpptl", [:]) { binding ->
                 binding.title = 'Hello, World!'
                 binding.message = 'Hello, Static World!'
             }
         }
-    }
+    },
+
+    webContexts: [
+            "/myapp" : new GrettyContext("myapp")
+    ]
 ]
 server.start ()

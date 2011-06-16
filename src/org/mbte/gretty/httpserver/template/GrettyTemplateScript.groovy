@@ -22,13 +22,12 @@ import org.mbte.gretty.httpserver.GrettyHttpHandler
 import groovypp.text.GppTemplateScript
 
 @Typed abstract class GrettyTemplateScript extends GppTemplateScript{
-    protected GrettyHttpHandler grettyHttpHandler
-
-    GrettyHttpRequest  getRequest  () { grettyHttpHandler.request  }
-    GrettyHttpResponse getResponse () { grettyHttpHandler.response }
+    GrettyHttpRequest  request
+    GrettyHttpResponse response
 
     void setGrettyHttpHandler(GrettyHttpHandler grettyHttpHandler) {
-        this.grettyHttpHandler = grettyHttpHandler
+        request  = grettyHttpHandler.request
+        response = grettyHttpHandler.response
     }
 
     def getUnresolvedProperty(String name) {

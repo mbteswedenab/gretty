@@ -31,6 +31,9 @@ import org.jboss.netty.handler.codec.http.HttpVersion
 import org.jboss.netty.handler.codec.http.HttpResponse
 import groovypp.concurrent.BindLater
 import org.jboss.netty.handler.codec.http.HttpRequest
+import org.mbte.gretty.httpserver.GrettyRequestEncoder
+import org.mbte.gretty.httpserver.GrettyRequestDecoder
+import org.mbte.gretty.httpserver.GrettyResponseDecoder
 
 @Typed class AbstractHttpClient extends AbstractClient {
     AbstractHttpClient(SocketAddress remoteAddress, ChannelFactory factory = null) {
@@ -42,14 +45,9 @@ import org.jboss.netty.handler.codec.http.HttpRequest
 
         pipeline.removeFirst() // remove self
 
-        pipeline.addLast("http.response.decoder", (HttpResponseDecoder)[
-            createMessage: { initialLine ->
-                def response = new GrettyHttpResponse(HttpVersion.valueOf(initialLine[0]), new HttpResponseStatus(Integer.valueOf(initialLine[1]), initialLine[2]))
-                return response;
-            }
-        ])
+        pipeline.addLast("http.response.decoder", new GrettyResponseDecoder())
         pipeline.addLast("http.response.aggregator", new HttpChunkAggregator(Integer.MAX_VALUE))
-        pipeline.addLast("http.request.encoder", new HttpRequestEncoder())
+        pipeline.addLast("http.request.encoder", new GrettyRequestEncoder())
         pipeline.addLast("http.application", this)
 
         pipeline

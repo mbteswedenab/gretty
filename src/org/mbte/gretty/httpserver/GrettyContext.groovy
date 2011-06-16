@@ -24,13 +24,20 @@ import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*
 
 import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*
 import org.jboss.netty.handler.codec.http.HttpMethod
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match
 import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
+import org.mbte.gretty.httpserver.template.GrettyTemplateScript
+import groovypp.text.FastStringWriter
 
 /**
  * Corresponds to sub-path of application.
  */
 @Typed class GrettyContext {
+    GrettyContext(String path = null) {
+        if(path) {
+            dir = path
+        }
+    }
+
     /**
      * Class loader for templates
      */
@@ -55,6 +62,16 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
      * Path where to find static files for this context
      */
     protected String     staticFiles
+
+    /**
+     * Path where to find templates for this context
+     */
+    protected String     templateFiles
+
+    /**
+     * Path where to find templates for this context
+     */
+    protected String     groovletFiles
 
     /**
      * Path for static resources to be searched in class path
@@ -84,8 +101,9 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
     }
 
     void handleHttpRequest(GrettyHttpRequest request, GrettyHttpResponse response) {
-        def localUri = URLDecoder.decode(request.uri, "UTF-8").substring(webPath?.length())
+        def localUri = URLDecoder.decode(request.path, "UTF-8").substring(webPath?.length())
 
+        // try static file
         def staticFile = request.method == HttpMethod.GET ? findStaticFile(localUri) : null
         if (staticFile) {
             response.status = staticFile.second
@@ -99,6 +117,7 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
             return
         }
 
+        // try static resource
         def staticResource = request.method == HttpMethod.GET ? findStaticResource(localUri) : null
         if(staticResource) {
             response.status = staticResource.second
@@ -112,6 +131,25 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
             return
         }
 
+        def groovyFile = findGroovletScript(localUri)
+        if (groovyFile) {
+            response.status = groovyFile.second
+            if (groovyFile.second.code != 200) {
+                response.setHeader(CONTENT_TYPE, "text/html; charset=UTF-8")
+                response.responseBody = "Failure: ${groovyFile.second}\r\n"
+            }
+            else {
+                def template = templateEngine.getTemplateClass(groovyFile.first)
+                GrettyTemplateScript script = template.newInstance() [request: request, response: response]
+                def writer = new FastStringWriter()
+                script.writeTo([:], writer)
+                response.html = writer.toString()
+            }
+            return
+        }
+
+
+        // try matchers
         def override = request.getHeader('X-HTTP-Method-Override')
         if(override) {
             override = HttpMethod.valueOf(override)
@@ -129,13 +167,9 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
             }
         }
 
+        // own default handler (maybe delegates to parent default)
         if (defaultHandler) {
             defaultHandler.handle(request, response, Collections.emptyMap())
-            return
-        }
-
-        if (parentContext?.defaultHandler) {
-            parentContext.defaultHandler.handle(request, response, Collections.emptyMap())
             return
         }
 
@@ -147,6 +181,9 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
     public void initContext (String path, GrettyContext parentContext, GrettyServer server) {
         this.server = server
         this.parentContext = parentContext
+
+        if(!defaultHandler)
+            defaultHandler = parentContext?.defaultHandler
 
         webPath = path.endsWith("/") ? path.substring(0,path.length()-1) : path
 
@@ -226,6 +263,48 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
         [file,OK]
     }
 
+    private Pair<File, HttpResponseStatus> findGroovletScript(String uri) {
+        if (!groovletFiles)
+            return null
+
+        uri = uri.replace('/', File.separatorChar)
+
+        if(uri.startsWith('/'))
+            uri = uri.substring(1)
+
+        if (uri.contains(File.separator + ".") || uri.contains("." + File.separator) || uri.startsWith(".") || uri.endsWith(".")) {
+            return [null,FORBIDDEN]
+        }
+
+        def fileUri = "$groovletFiles/${uri}.groovy"
+
+        def file = new File(fileUri).canonicalFile
+        if (!file.exists() || !file.file) {
+            fileUri = "$groovletFiles/${uri}.gpptl"
+            file = new File(fileUri).canonicalFile
+            if (!file.exists() || !file.file) {
+                file = new File(file.parentFile, "default.groovy").canonicalFile
+                if (!file.exists() || !file.file) {
+                    return null
+                }
+            }
+        }
+
+        if (file.hidden) {
+            return [null,FORBIDDEN]
+        }
+
+        if (!file.file) {
+            def indexFiles = file.listFiles { dir, name -> name == "default.groovy" }
+            if (indexFiles?.length == 1 && new File(file, "default.groovy").file)
+                file = indexFiles[0]
+            else
+                return defaultHandler ? null : [null,FORBIDDEN]
+        }
+
+        [file,OK]
+    }
+
     private Pair<InputStream, HttpResponseStatus> findStaticResource(String uri) {
         if (!staticResources)
             return null
@@ -257,8 +336,9 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
         this.staticFiles = staticFiles
     }
 
-    String getStatic () {
-        staticFiles
+    void setDir (String dir) {
+        this.staticFiles = new File(dir, "static").canonicalFile.absolutePath
+        this.groovletFiles = this.templateFiles = new File(dir).canonicalFile.absolutePath
     }
 
     void setPublic (GrettyPublicDescription description) {

@@ -39,6 +39,9 @@ import org.jboss.netty.handler.codec.http.CookieEncoder
 import groovypp.concurrent.BindLater
 import groovypp.concurrent.CallLater
 import java.util.concurrent.Executor
+import org.mbte.gretty.httpserver.session.GrettySession
+import org.jboss.netty.handler.codec.http.DefaultCookie
+import org.jboss.netty.handler.codec.http.Cookie
 
 @Typed
 @Use(JacksonCategory)
@@ -52,6 +55,9 @@ class GrettyHttpResponse extends DefaultHttpResponse {
 
     private volatile Channel channel
     private boolean keepAlive
+    protected GrettySession session
+
+    Set<Cookie> cookies = []
 
     GrettyHttpResponse (Channel channel, boolean keepAlive) {
         super(HTTP_1_1, HttpResponseStatus.FORBIDDEN)
@@ -72,6 +78,12 @@ class GrettyHttpResponse extends DefaultHttpResponse {
     }
 
     void complete() {
+        if(session) {
+            addCookie("JSESSIONID", session.id)
+            session?.server?.sessionManager?.storeSession(session)
+            session = null
+        }
+
         def channel = this.channel
 
         if (!channel)
@@ -169,11 +181,22 @@ class GrettyHttpResponse extends DefaultHttpResponse {
         channel?.close()
     }
 
-    GrettyHttpResponse cookies (Map<String,String> cookies) {
-        def encoder = new CookieEncoder(false)
-        for(e in cookies.entrySet())
-            encoder.addCookie(e.key, e.value)
-        setHeader(HttpHeaders.Names.SET_COOKIE, encoder.encode())
-        this
+    Cookie getCookie(String name) {
+        if(cookies) {
+            for(c in cookies) {
+                if(c.name == name)
+                    return c
+            }
+        }
+    }
+
+    void addCookie(Cookie cookie) {
+        if(!cookies)
+            cookies = []
+        cookies << cookie
+    }
+
+    void addCookie(String name, String value) {
+        addCookie(new DefaultCookie(name, value))
     }
 }

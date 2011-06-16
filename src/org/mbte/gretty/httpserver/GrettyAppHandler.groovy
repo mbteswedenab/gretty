@@ -73,12 +73,7 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
                 }
                 else {
                     server.execute {
-                        try {
-                            handleHttpRequest(req, e)
-                        }
-                        catch(throwable) {
-                            throwable.printStackTrace()
-                        }
+                        handleHttpRequest(req, e)
                     }
                 }
             break
@@ -90,11 +85,17 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
 
     private void handleHttpRequest(GrettyHttpRequest request, MessageEvent e) {
         GrettyHttpResponse response = [e.channel, isKeepAlive(request)][protocolVersion: request.protocolVersion]
-        def uri = request.path
 
         response.async.incrementAndGet()
 
-        findContext(uri)?.handleHttpRequest(request, response)
+        def uri = request.path
+        try {
+            findContext(uri)?.handleHttpRequest(request, response)
+        }
+        catch(Throwable t) {
+            t.printStackTrace()
+            response.status = HttpResponseStatus.INTERNAL_SERVER_ERROR
+        }
 
         if (!response.async.decrementAndGet())
             response.complete()

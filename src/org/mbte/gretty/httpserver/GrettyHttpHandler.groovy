@@ -23,6 +23,7 @@ import java.util.concurrent.Executor
 import org.jboss.netty.handler.codec.http.HttpResponseStatus
 import org.mbte.gretty.httpserver.template.GrettyTemplateScript
 import groovypp.text.FastStringWriter
+import org.mbte.gretty.httpserver.session.GrettySession
 
 @Typed
 @Use(JacksonCategory)
@@ -149,4 +150,24 @@ abstract class GrettyHttpHandler implements Cloneable {
     }
 
     abstract void handle(Map<String,String> pathArguments)
+
+    GrettySession getSession(boolean force = true) {
+        def res = response.session
+        if(!res) {
+            def cookie = request.getCookie("JSESSIONID")
+            if(cookie) {
+                res = response.session = server.sessionManager.getSession(cookie.value)
+            }
+            else {
+                if(force) {
+                    res = new GrettySession()[id: UUID.randomUUID(), server: server]
+                    response.session = res
+                }
+            }
+        }
+
+        if(res)
+            res.lastAccessedTime = System.currentTimeMillis()
+        res
+    }
 }

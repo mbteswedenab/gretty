@@ -18,18 +18,19 @@ package org.mbte.gretty.httpserver.session
 
 import java.util.concurrent.ConcurrentHashMap
 
-@Typed class StandardSessionManager extends GrettySessionManager {
+@Typed class InMemorySessionManager extends GrettySessionManager {
     private final ConcurrentHashMap sessions = [:]
 
-    GrettySession getSession(String id, boolean forceNew = false) {
-        def session = sessions[id]
-        if(!session && forceNew) {
-            session = [id: id]
-            def prev = sessions.putIfAbsent(id, session)
-            if(!prev) {
-                session = prev
-            }
-        }
-        session
+    GrettySession getSession(String id) {
+        sessions[id]
+    }
+
+    GrettySession removeSession(GrettySession session) {
+        if(session?.id)
+            sessions.remove(session.id)
+    }
+
+    GrettySession storeSession(GrettySession session) {
+        sessions[session.id] = session
     }
 }

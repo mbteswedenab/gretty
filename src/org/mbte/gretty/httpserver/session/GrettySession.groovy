@@ -17,11 +17,32 @@
 package org.mbte.gretty.httpserver.session
 
 import groovypp.concurrent.FHashMap
+import org.mbte.gretty.httpserver.GrettyServer
 
 @Typed class GrettySession implements Externalizable {
-    private FHashMap attributes = [:]
+    private volatile FHashMap attributes = [:]
 
+    transient GrettyServer server
+
+    GrettySession () {
+        maxInactiveInterval = 20*60 // 20 minutes
+        lastAccessedTime = System.currentTimeMillis()
+    }
+
+    /**
+     * Session id
+     */
     String id
+
+    /**
+     * Time in seconds after which the session will be expired
+     */
+    int    maxInactiveInterval
+
+    /**
+     * Milliseconds since midnight Jan 1st 1970
+     */
+    long   lastAccessedTime
 
     def getUnresolvedProperty(String name) {
         attributes.get(name)

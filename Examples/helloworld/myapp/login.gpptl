@@ -1,0 +1,8 @@
+<html>
+<body>
+    <form method="post" action="./login">
+        <input id="text" name="text" type="text>
+        <input id="pwd" name="pwd" type="password">
+    </form>
+</body
+</html>

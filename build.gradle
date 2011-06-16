@@ -19,9 +19,9 @@ apply plugin: 'idea'
 apply plugin: 'maven'
 
 group = 'org.mbte.groovypp'
-version = '0.4.258'
+version = '0.4.259'
 
-def gppVersion = '0.4.258_1.7.10'
+def gppVersion = '0.4.259_1.8.0'
 
 repositories {
   mavenCentral ()
@@ -33,7 +33,7 @@ repositories {
 }
 
 dependencies {
-    groovy group: 'org.codehaus.groovy', name: 'groovy', version: "1.7.10"
+    groovy group: 'org.codehaus.groovy', name: 'groovy', version: "1.8.0"
     compile group: 'org.mbte.groovypp', name: 'groovypp', version: "$gppVersion"
 
     compile group: 'org.jboss.netty', name: 'netty', version: '3.2.4.Final'

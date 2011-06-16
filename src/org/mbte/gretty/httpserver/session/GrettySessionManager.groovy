@@ -18,4 +18,8 @@ package org.mbte.gretty.httpserver.session
 
 @Typed abstract class GrettySessionManager {
     abstract GrettySession getSession(String id)
+
+    abstract GrettySession removeSession(GrettySession session)
+
+    abstract GrettySession storeSession(GrettySession session)
 }

@@ -29,6 +29,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.GeneratedClosure
 import org.mbte.gretty.httpserver.session.GrettySessionManager
 import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
+import org.mbte.gretty.httpserver.session.InMemorySessionManager
 
 @Typed class GrettyServer extends AbstractServer {
     GrettyContext defaultContext
@@ -39,6 +40,7 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
 
     GrettyServer() {
         localAddress = new InetSocketAddress(8080)
+        sessionManager = new InMemorySessionManager()
     }
 
     void setUnresolvedProperty(String name, GrettyRestDescription description) {
@@ -69,6 +71,12 @@ import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
         if(!defaultContext)
             defaultContext = []
         defaultContext.public = description
+    }
+
+    void setDir(String path) {
+        if(!defaultContext)
+            defaultContext = []
+        defaultContext.dir = path
     }
 
     void setWebContexts(Map<String,GrettyContext> webContexts) {

@@ -22,9 +22,18 @@ import groovy.text.Template
 import org.codehaus.groovy.util.ManagedReference
 import org.codehaus.groovy.util.ReferenceManager
 import org.codehaus.groovy.control.CompilerConfiguration
+import groovypp.text.GppTemplateScript
 
 @Typed class GrettyTemplateEngine extends GppSimpleTemplateEngine {
     GrettyTemplateEngine (ClassLoader classLoader, String scriptClass = GrettyTemplateScript.name) {
         super(classLoader, scriptClass)
     }
+
+    protected Class<GppTemplateScript> compile(File file) {
+        if(file.name.endsWith(".gpptl"))
+            return super.compile(file)
+
+        loader.parseClass(file)
+    }
+
 }

@@ -16,29 +16,25 @@
 
 package org.mbte.gretty.httpserver
 
-import org.jboss.netty.handler.codec.http.HttpVersion
-
+import org.jboss.netty.handler.codec.http.HttpResponseDecoder
 import org.jboss.netty.handler.codec.http.HttpMessage
-
-import org.jboss.netty.handler.codec.http.HttpRequestDecoder
-import org.jboss.netty.handler.codec.http.HttpMethod
+import org.jboss.netty.handler.codec.http.HttpResponseStatus
+import org.jboss.netty.handler.codec.http.HttpVersion
 import org.jboss.netty.channel.ChannelHandlerContext
 import org.jboss.netty.channel.Channel
 import org.jboss.netty.buffer.ChannelBuffer
-import org.jboss.netty.handler.codec.http.CookieDecoder
 import org.jboss.netty.handler.codec.http.HttpMessageDecoder
+import org.jboss.netty.handler.codec.http.CookieDecoder
 
-@Typed public class GrettyRequestDecoder extends HttpRequestDecoder {
-
-    protected HttpMessage createMessage(String[] initialLine) throws Exception{
-        return new GrettyHttpRequest(
-                HttpVersion.valueOf(initialLine[2]), HttpMethod.valueOf(initialLine[0]), initialLine[1]);
+@Typed class GrettyResponseDecoder extends HttpResponseDecoder{
+    protected HttpMessage createMessage(String[] initialLine) {
+        return new GrettyHttpResponse(HttpVersion.valueOf(initialLine[0]), new HttpResponseStatus(Integer.valueOf(initialLine[1]), initialLine[2]));
     }
 
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer, HttpMessageDecoder.State state) {
         def decode = super.decode(ctx, channel, buffer, state)
-        if(decode instanceof GrettyHttpRequest) {
-            def header = decode.getHeader("Cookie")
+        if(decode instanceof GrettyHttpResponse) {
+            def header = decode.getHeader("Set-Cookie")
             if(header) {
                 def decoder = new CookieDecoder()
                 decode.cookies = decoder.decode(header)

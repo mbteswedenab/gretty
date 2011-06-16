@@ -31,6 +31,8 @@ class GrettyHttpRequest extends DefaultHttpRequest {
     private Map<String, List<String>> params
     private boolean followRedirects = false
 
+    Set<Cookie> cookies
+
     String charset = "UTF-8"
 
     GrettyHttpRequest() {
@@ -117,29 +119,6 @@ class GrettyHttpRequest extends DefaultHttpRequest {
         this
     }
 
-    GrettyHttpRequest cookies (Map<String,String> cookies) {
-        def encoder = new CookieEncoder(false)
-        for(e in cookies.entrySet())
-            encoder.addCookie(e.key, e.value)
-        setHeader(HttpHeaders.Names.COOKIE, encoder.encode())
-        this
-    }
-
-    Map<String,List<Cookie>> getCookies () {
-        def cookies = getHeaders(HttpHeaders.Names.COOKIE)
-        Map<String,List<Cookie>> res = [:]
-        for(cookie in cookies) {
-            for(c in new CookieDecoder().decode(cookie)) {
-                def list = res[c.name]
-                if(!list)
-                  res[c.name] = [c]
-                else
-                  list << c
-            }
-        }
-        res
-    }
-
     GrettyHttpRequest followRedirects (boolean follow) {
         followRedirects = follow
         this
@@ -152,5 +131,23 @@ class GrettyHttpRequest extends DefaultHttpRequest {
     void setMethodOverride(HttpMethod newMethod) {
         method = HttpMethod.POST
         addHeader("X-HTTP-Method-Override", newMethod)
+    }
+
+    Cookie getCookie(String name) {
+        if(cookies) {
+            for (c in cookies)
+                if(c.name == name)
+                    return c
+        }
+    }
+
+    void addCookie(Cookie cookie) {
+        if(!cookies)
+            cookies = []
+        cookies << cookie
+    }
+
+    void addCookie(String name, String value) {
+        addCookie(new DefaultCookie(name, value))
     }
 }

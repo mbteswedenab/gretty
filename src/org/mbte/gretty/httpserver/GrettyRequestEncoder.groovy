@@ -16,21 +16,21 @@
 
 package org.mbte.gretty.httpserver
 
-import org.jboss.netty.handler.codec.http.HttpResponseEncoder
+import org.jboss.netty.handler.codec.http.HttpRequestEncoder
 import org.jboss.netty.channel.ChannelHandlerContext
 import org.jboss.netty.channel.Channel
 import org.jboss.netty.handler.codec.http.CookieEncoder
 
-@Typed class GrettyResponseEncoder extends HttpResponseEncoder {
-    Object encode(ChannelHandlerContext ctx, Channel channel, Object _msg) {
+@Typed class GrettyRequestEncoder extends HttpRequestEncoder {
+    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object _msg) {
         def msg = _msg
-        if(msg instanceof GrettyHttpResponse) {
+        if(msg instanceof GrettyHttpRequest) {
             if(msg.cookies) {
-                def encoder = new CookieEncoder(true)
+                def encoder = new CookieEncoder(false)
                 for(c in msg.cookies) {
                     encoder.addCookie(c)
                 }
-                msg.addHeader("Set-Cookie", encoder.encode())
+                msg.addHeader("Cookie", encoder.encode())
             }
         }
         return super.encode(ctx, channel, msg)
