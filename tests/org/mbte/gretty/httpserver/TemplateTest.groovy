@@ -16,52 +16,67 @@
 
 package org.mbte.gretty.httpserver
 
-import org.jboss.netty.channel.local.LocalAddress
 import org.jboss.netty.handler.codec.http.HttpMethod
-import org.mbte.gretty.httpclient.HttpRequestHelper
+import sun.misc.Request
 
-class TemplateTest extends GrettyServerTestCase {
+@Typed class TemplateTest extends GrettyServerTestCase {
+
+    File scriptFile, templateFile
 
     protected void buildServer() {
         File root = ["."]
         root = root.canonicalFile
-        def tempFile = File.createTempFile("temp_", "_script.gpptl", root)
-        tempFile.text = """\
-Request path: \${request.uri}\
-URI: \$uri\
-<%
-    response.addHeader "Template", "true"
-%>"""
-        tempFile.deleteOnExit()
-
-        def tempFile2 = File.createTempFile("temp_", "_script.groovy", root)
-        tempFile2.text = """\
-        out.print request.path.toUpperCase()
+        templateFile = File.createTempFile("temp_", "_script.gpptl", root)
+        templateFile.text = """\
+Request path: \${request.uri} URI: \${uri ?: request.uri.toUpperCase() }\
 """
-        tempFile.deleteOnExit()
+        templateFile.deleteOnExit()
 
-        server = new GrettyServer ()
-        server.groovy = [
+        scriptFile = File.createTempFile("temp_", "_script.groovy", root)
+        scriptFile.text = """\
+        print "issue: \${request.parameters.issue[0]} reporter: \${request.parameters.reporter[0]}"
+"""
+        scriptFile.deleteOnExit()
+
+        server = [
             default: {
-                response.text = template(request.path.endsWith("lala") ? tempFile.absolutePath : tempFile2.absolutePath) { binding ->
+                response.text = template(templateFile.absolutePath, [:]) { binding ->
                     binding.uri = request.uri.toUpperCase ()
                 }
+                response.addHeader "Template", "true"
             }
         ]
+
+        // we don't used server.dir property as it will complain on missing directory 'static'
+        server.defaultContext.groovletFiles = "."
     }
 
     void testTemplate() {
         GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/template/lala"]
         doTest(req) { GrettyHttpResponse response ->
-            assert response.contentText == "Request path: /template/lalaURI: /TEMPLATE/LALA"
+            assert response.contentText == "Request path: /template/lala URI: /TEMPLATE/LALA"
             assert response.getHeader("Template") == "true"
         }
     }
 
-    void testScript() {
-        GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/template/mama"]
+    void testTemplateNonDefault() {
+        // path to our script
+        def path = templateFile.name.substring(0, templateFile.name.length() - 6)
+
+        GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/${path}"]
         doTest(req) { GrettyHttpResponse response ->
-            assert response.contentText == "/TEMPLATE/MAMA"
+            assert response.contentText == "Request path: /$path URI: /${path.toUpperCase()}"
+            assert !response.getHeader("Template")
+        }
+    }
+
+    void testScript() {
+        // path to our script
+        def path = scriptFile.name.substring(0, scriptFile.name.length() - 7)
+
+        GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/${path}?issue=239&reporter=wilson"]
+        doTest(req) { GrettyHttpResponse response ->
+            assert response.contentText == "issue: 239 reporter: wilson"
         }
     }
 }
