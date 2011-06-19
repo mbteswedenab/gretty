@@ -16,10 +16,22 @@
 
 package org.mbte.gretty.httpserver.session
 
+import groovypp.concurrent.BindLater
+import org.mbte.gretty.httpserver.GrettyAsyncFunction
+
 @Typed abstract class GrettySessionManager {
     abstract GrettySession getSession(String id)
+
+    abstract BindLater<GrettySession> getSessionAsync(String id, SessionCallback callback = null)
 
     abstract GrettySession removeSession(GrettySession session)
 
     abstract GrettySession storeSession(GrettySession session)
+
+    abstract static class SessionCallback extends BindLater<GrettySession> implements GrettyAsyncFunction<GrettySession,Object> {
+        protected void done() {
+            super.done()
+            handlerAction(get())
+        }
+    }
 }

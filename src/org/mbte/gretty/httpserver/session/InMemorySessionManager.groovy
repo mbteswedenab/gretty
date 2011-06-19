@@ -17,12 +17,19 @@
 package org.mbte.gretty.httpserver.session
 
 import java.util.concurrent.ConcurrentHashMap
+import groovypp.concurrent.BindLater
 
 @Typed class InMemorySessionManager extends GrettySessionManager {
-    private final ConcurrentHashMap sessions = [:]
+    private final ConcurrentHashMap<String,GrettySession> sessions = [:]
 
     GrettySession getSession(String id) {
         sessions[id]
+    }
+
+    BindLater<GrettySession> getSessionAsync(String id, SessionCallback callback = null) {
+        def later = callback ?: new BindLater()
+        later.set(sessions[id])
+        later
     }
 
     GrettySession removeSession(GrettySession session) {

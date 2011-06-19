@@ -24,6 +24,7 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus
 import org.mbte.gretty.httpserver.template.GrettyTemplateScript
 import groovypp.text.FastStringWriter
 import org.mbte.gretty.httpserver.session.GrettySession
+import org.mbte.gretty.httpserver.session.GrettySessionManager
 
 @Typed
 @Use(JacksonCategory)
@@ -169,5 +170,37 @@ abstract class GrettyHttpHandler implements Cloneable {
         if(res)
             res.lastAccessedTime = System.currentTimeMillis()
         res
+    }
+
+    BindLater<GrettySession> getSessionAsync(GrettySessionManager.SessionCallback callback) {
+        def res = response.session
+        if(!res) {
+            def cookie = request.getCookie("JSESSIONID")
+            if(cookie) {
+                if(callback) {
+                    callback.whenBound { bl ->
+                        def session = bl.get()
+                        response.session = session
+                        session.lastAccessedTime = System.currentTimeMillis()
+                    }
+                }
+                else {
+                    callback = { session ->
+                        response.session = session
+                        session.lastAccessedTime = System.currentTimeMillis()
+                    }
+                }
+                return server.sessionManager.getSessionAsync(cookie.value, callback)
+            }
+            else {
+                res = new GrettySession()[id: UUID.randomUUID(), server: server]
+                res.lastAccessedTime = System.currentTimeMillis()
+                response.session = res
+
+                def later = callback ?: new BindLater()
+                later.set(res)
+                later
+            }
+        }
     }
 }

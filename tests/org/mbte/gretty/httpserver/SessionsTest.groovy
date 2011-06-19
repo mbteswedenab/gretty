@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.HttpMethod
@@ -33,6 +31,22 @@ import org.jboss.netty.handler.codec.http.HttpMethod
                     session.counter = obj
                 }
                 response.text = obj
+            },
+
+            "/async": {
+                get {
+                    getSessionAsync { session ->
+                        Integer obj = session.counter
+                        if(obj == null) {
+                            session.counter = obj = 1
+                        }
+                        else {
+                            obj = obj + 1
+                            session.counter = obj
+                        }
+                        response.text = obj
+                    }
+                }
             }
         ]
     }
@@ -40,7 +54,24 @@ import org.jboss.netty.handler.codec.http.HttpMethod
     void testMe () {
         Reference sessionId = []
         for (i in 0..<10) {
-            GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/template/mama"]
+            GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/"]
+            if(sessionId.get())
+                req.addCookie("JSESSIONID", sessionId.get().toString())
+
+            doTest(req) { GrettyHttpResponse response ->
+                def session = response.getCookie("JSESSIONID")?.value
+                sessionId.set(session)
+                println "$i ${response.contentText} $session"
+                assert response.contentText == "${i+1}"
+            }
+        }
+    }
+
+    void testAsync () {
+        Reference sessionId = []
+        for (i in 0..<10) {
+            GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/async"]
+
             if(sessionId.get())
                 req.addCookie("JSESSIONID", sessionId.get().toString())
 
