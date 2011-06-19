@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-
-
 package org.mbte.gretty.httpserver.session
 
 import java.util.concurrent.ConcurrentHashMap
 import groovypp.concurrent.BindLater
 
-@Typed class InMemorySessionManager extends GrettySessionManager {
+@Typed class GrettyInMemorySessionManager extends GrettySessionManager {
     private final ConcurrentHashMap<String,GrettySession> sessions = [:]
 
     GrettySession getSession(String id) {
@@ -34,12 +32,12 @@ import groovypp.concurrent.BindLater
         later
     }
 
-    GrettySession removeSession(GrettySession session) {
+    void removeSession(GrettySession session) {
         if(session?.id)
             sessions.remove(session.id)
     }
 
-    GrettySession storeSession(GrettySession session) {
+    void storeSession(GrettySession session) {
         sessions[session.id] = session
     }
 }

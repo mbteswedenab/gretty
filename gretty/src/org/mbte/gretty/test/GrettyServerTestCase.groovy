@@ -16,10 +16,11 @@
 
 
 
-package org.mbte.gretty.httpserver
+package org.mbte.gretty.test
 
 import org.mbte.gretty.httpclient.HttpRequestHelper
 import org.jboss.netty.channel.local.LocalAddress
+import org.mbte.gretty.httpserver.GrettyServer
 
 @Typed abstract class GrettyServerTestCase extends GroovyTestCase implements HttpRequestHelper {
     protected GrettyServer server

@@ -19,6 +19,7 @@
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.HttpMethod
+import org.mbte.gretty.test.GrettyServerTestCase
 
 @Typed class CookiesTest extends GrettyServerTestCase {
     protected void buildServer() {

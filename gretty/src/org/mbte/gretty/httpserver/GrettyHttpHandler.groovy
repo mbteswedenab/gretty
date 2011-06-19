@@ -164,6 +164,7 @@ abstract class GrettyHttpHandler implements Cloneable {
             else {
                 if(force) {
                     res = new GrettySession()[id: UUID.randomUUID(), server: server]
+                    server.sessionManager.storeSession(res)
                     response.session = res
                 }
             }

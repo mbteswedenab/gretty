@@ -19,7 +19,8 @@
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.HttpMethod
-import sun.misc.Request
+
+import org.mbte.gretty.test.GrettyServerTestCase
 
 @Typed class TemplateTest extends GrettyServerTestCase {
 

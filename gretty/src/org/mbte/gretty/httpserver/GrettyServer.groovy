@@ -19,7 +19,7 @@
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.*
-import org.jboss.netty.handler.codec.http.*
+
 import org.jboss.netty.handler.stream.ChunkedWriteHandler
 import org.jboss.netty.logging.InternalLogLevel
 
@@ -30,8 +30,8 @@ import groovypp.concurrent.CallLater
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.GeneratedClosure
 import org.mbte.gretty.httpserver.session.GrettySessionManager
-import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
-import org.mbte.gretty.httpserver.session.InMemorySessionManager
+
+import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
 
 @Typed class GrettyServer extends AbstractServer {
     GrettyContext defaultContext
@@ -42,7 +42,7 @@ import org.mbte.gretty.httpserver.session.InMemorySessionManager
 
     GrettyServer() {
         localAddress = new InetSocketAddress(8080)
-        sessionManager = new InMemorySessionManager()
+        sessionManager = new GrettyInMemorySessionManager()
     }
 
     void setUnresolvedProperty(String name, GrettyRestDescription description) {
@@ -91,10 +91,21 @@ import org.mbte.gretty.httpserver.session.InMemorySessionManager
         if(!defaultContext)
             throw new IllegalStateException("No root context configured")
         defaultContext.initContext ("/", null, this)
+
+        sessionManager.server = this
+        sessionManager?.start()
+
         super.start ()
     }
 
-     protected void buildPipeline(ChannelPipeline pipeline) {
+    void stop() {
+        super.stop()
+
+        sessionManager?.stop ()
+        sessionManager.server = null
+    }
+
+    protected void buildPipeline(ChannelPipeline pipeline) {
         super.buildPipeline(pipeline)
 
         pipeline.addLast("flash.policy.file", new FlashPolicyFileHandler(this))

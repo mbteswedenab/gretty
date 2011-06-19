@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package org.mbte.gretty
 
 import java.util.concurrent.Executors

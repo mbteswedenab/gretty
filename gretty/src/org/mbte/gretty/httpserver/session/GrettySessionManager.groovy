@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-
-
 package org.mbte.gretty.httpserver.session
 
 import groovypp.concurrent.BindLater
 import org.mbte.gretty.httpserver.GrettyAsyncFunction
+import org.mbte.gretty.httpserver.GrettyServer
 
 @Typed abstract class GrettySessionManager {
+    GrettyServer server
+
     abstract GrettySession getSession(String id)
 
     abstract BindLater<GrettySession> getSessionAsync(String id, SessionCallback callback = null)
 
-    abstract GrettySession removeSession(GrettySession session)
+    abstract void removeSession(GrettySession session)
 
-    abstract GrettySession storeSession(GrettySession session)
+    abstract void storeSession(GrettySession session)
 
     abstract static class SessionCallback extends BindLater<GrettySession> implements GrettyAsyncFunction<GrettySession,Object> {
         protected void done() {
@@ -36,4 +37,8 @@ import org.mbte.gretty.httpserver.GrettyAsyncFunction
             handlerAction(get())
         }
     }
+
+    void start () {}
+
+    void stop () {}
 }

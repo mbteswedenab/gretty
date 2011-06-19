@@ -14,17 +14,28 @@
  * limitations under the License.
  */
 
+package org.mbte.gretty.hazelcast
 
+import com.hazelcast.config.Config
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
 
-dependencies {
-    groovy group: 'org.codehaus.groovy', name: 'groovy', version: "1.8.0"
-    compile group: 'org.mbte.groovypp', name: 'groovypp', version: "$gppVersion"
+@Typed class GrettyHazelcastManager {
+    final Config config = []
 
-    compile group: 'org.jboss.netty', name: 'netty', version: '3.2.4.Final'
-    compile(group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version: '1.6.1')
+    private HazelcastInstance instance
 
-    compile(group: 'junit', name: 'junit', version: '4.8.1')
+    HazelcastInstance getInstance () {
+        instance
+    }
 
-    testRuntime(group: 'commons-cli', name: 'commons-cli', version: '1.1')
+    void start () {
+        if(!instance)
+            instance = Hazelcast.newHazelcastInstance(config)
+    }
+
+    void stop () {
+        instance?.shutdown()
+        instance = null
+    }
 }
-

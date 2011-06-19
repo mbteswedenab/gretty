@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-
-
-package org.mbte.gretty.httpserver
+package org.mbte.gretty.hazelcast
 
 import org.jboss.netty.handler.codec.http.HttpMethod
 import org.mbte.gretty.test.GrettyServerTestCase
+import org.mbte.gretty.httpserver.GrettyHttpRequest
+import org.mbte.gretty.httpserver.GrettyHttpResponse
+import com.hazelcast.config.MapConfig
 
 @Typed class SessionsTest extends GrettyServerTestCase {
     protected void buildServer() {
+        GrettyHazelcastManager hazelcast = []
+        MapConfig mc = []
+        mc.setName(GrettyHazelcastSessionManager.GRETTY_SESSION_MAP)
+        hazelcast.config.addMapConfig(mc)
         server = [
+            sessionManager: new GrettyHazelcastSessionManager(hazelcast),
+
             default: {
                 Integer obj = session.counter
                 if(obj == null) {
