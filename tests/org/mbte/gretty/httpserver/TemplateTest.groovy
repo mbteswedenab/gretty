@@ -22,10 +22,9 @@ import sun.misc.Request
 @Typed class TemplateTest extends GrettyServerTestCase {
 
     File scriptFile, templateFile
+    File root = new File(".").canonicalFile
 
     protected void buildServer() {
-        File root = ["."]
-        root = root.canonicalFile
         templateFile = File.createTempFile("temp_", "_script.gpptl", root)
         templateFile.text = """\
 Request path: \${request.uri} URI: \${uri ?: request.uri.toUpperCase() }\
@@ -77,6 +76,49 @@ Request path: \${request.uri} URI: \${uri ?: request.uri.toUpperCase() }\
         GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/${path}?issue=239&reporter=wilson"]
         doTest(req) { GrettyHttpResponse response ->
             assert response.contentText == "issue: 239 reporter: wilson"
+        }
+    }
+
+    void testChangingTemlate() {
+        def file = File.createTempFile("temp_", "_script.gpptl", root)
+        file.deleteOnExit()
+
+        for (i in 0..<10) {
+            def text = "<% Integer param = Integer.parseInt(request.parameters.value[0].toString())%>param: \$param const: $i value: <%= param + $i %>"
+            file.text = text
+            file.setLastModified(System.currentTimeMillis())
+            Thread.sleep(1000)
+
+            def path = file.name.substring(0, file.name.length() - 6)
+
+            GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/${path}?value=$i"]
+            doTest(req) { GrettyHttpResponse response ->
+                println response.contentText
+                assert response.contentText.startsWith("param: $i const: $i value: ${2*i}")
+            }
+        }
+    }
+
+    void testChangingScript() {
+        def file = File.createTempFile("temp_", "_script.gpp", root)
+        file.deleteOnExit()
+
+        for (i in 0..<10) {
+            def text = """
+def param = Integer.parseInt(request.parameters.value[0].toString())
+println "param: \$param const: $i value: \${param + $i}"
+"""
+            file.text = text
+            file.setLastModified(System.currentTimeMillis())
+            Thread.sleep(1000)
+
+            def path = file.name.substring(0, file.name.length() - 4)
+
+            GrettyHttpRequest req = [method:HttpMethod.GET, uri:"/${path}?value=$i"]
+            doTest(req) { GrettyHttpResponse response ->
+                println response.contentText
+                assert response.contentText.startsWith("param: $i const: $i value: ${2*i}")
+            }
         }
     }
 }

@@ -17,11 +17,6 @@
 package org.mbte.gretty.httpserver.template
 
 import groovypp.text.GppSimpleTemplateEngine
-import java.util.concurrent.ConcurrentHashMap
-import groovy.text.Template
-import org.codehaus.groovy.util.ManagedReference
-import org.codehaus.groovy.util.ReferenceManager
-import org.codehaus.groovy.control.CompilerConfiguration
 import groovypp.text.GppTemplateScript
 
 @Typed class GrettyTemplateEngine extends GppSimpleTemplateEngine {
@@ -33,7 +28,18 @@ import groovypp.text.GppTemplateScript
         if(file.name.endsWith(".gpptl"))
             return super.compile(file)
 
-        loader.parseClass(file)
+        logAttemptToCompile(file)
+        def clazz = loader.parseClass(new GroovyCodeSource(file), false)
+        cache.put(file, new GppSimpleTemplateEngine.CacheEntry(cache, file, clazz))
+        clazz
     }
 
+    protected void logCompilationError(Throwable throwable) {
+        println "Compilation error"
+        throwable.printStackTrace()
+    }
+
+    protected void logAttemptToCompile(File file) {
+        println "Trying to compile ${file.canonicalPath}"
+    }
 }

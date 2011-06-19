@@ -280,12 +280,16 @@ import groovypp.text.FastStringWriter
 
         def file = new File(fileUri).canonicalFile
         if (!file.exists() || !file.file) {
-            fileUri = "$groovletFiles/${uri}.gpptl"
+            fileUri = "$groovletFiles/${uri}.gpp"
             file = new File(fileUri).canonicalFile
             if (!file.exists() || !file.file) {
-                file = new File(file.parentFile, "default.groovy").canonicalFile
+                fileUri = "$groovletFiles/${uri}.gpptl"
+                file = new File(fileUri).canonicalFile
                 if (!file.exists() || !file.file) {
-                    return null
+                    file = new File(file.parentFile, "default.groovy").canonicalFile
+                    if (!file.exists() || !file.file) {
+                        return null
+                    }
                 }
             }
         }
