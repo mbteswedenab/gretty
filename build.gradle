@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 MBTE Sweden AB.
+ * Copyright 2009-2011 MBTE Sweden AB.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ subprojects {
     apply plugin: 'maven'
 
     group = 'org.mbte.groovypp'
-    version = '0.4.262'
+    version = '0.4.263'
     gppVersion = '0.4.261_1.8.0'
 
     repositories {
