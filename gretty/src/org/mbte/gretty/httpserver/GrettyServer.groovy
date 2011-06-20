@@ -46,7 +46,11 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
     }
 
     void setUnresolvedProperty(String name, GrettyRestDescription description) {
-        if(!defaultContext)
+        addRestDescription(name, description)
+    }
+
+    void addRestDescription(String name, GrettyRestDescription description) {
+        if (!defaultContext)
             defaultContext = []
         defaultContext.setUnresolvedProperty(name, description)
     }
@@ -103,6 +107,12 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
 
         sessionManager?.stop ()
         sessionManager.server = null
+    }
+
+    public void addWebContext (String name, GrettyContext context) {
+        if(!defaultContext)
+            defaultContext = []
+        defaultContext.addWebContext(name, context)
     }
 
     protected void buildPipeline(ChannelPipeline pipeline) {

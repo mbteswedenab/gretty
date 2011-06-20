@@ -367,6 +367,10 @@ import groovypp.text.FastStringWriter
         webSockets [path] = handler
     }
 
+    public void addWebContext (String name, GrettyContext context) {
+        webContexts[name] = context
+    }
+
     void setUnresolvedProperty(String name, GrettyRestDescription description) {
         description[match:name, context: this].run ()
     }

@@ -16,13 +16,15 @@
 
 apply plugin: 'idea'
 
+def _version = '0.4.264'
+
 subprojects {
     apply plugin: 'groovy'
     apply plugin: 'idea'
     apply plugin: 'maven'
 
     group = 'org.mbte.groovypp'
-    version = '0.4.263'
+    version = _version
     gppVersion = '0.4.261_1.8.0'
 
     repositories {
@@ -70,6 +72,21 @@ subprojects {
             }
         }
     }
+}
+
+
+task deployGoogle(dependsOn:[':gretty:sourcesJar', ':gretty:jar', ':gretty-hazelcast:jar', ':gretty-hazelcast:sourcesJar']) << {
+    println _version
+
+  ant.taskdef(name:"gcupload", classname:"net.bluecow.googlecode.ant.GoogleCodeUploadTask", classpath:"lib/ant-googlecode-0.0.2.jar")
+
+  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty/build/libs/gretty-${_version}.jar").absolutePath, targetfilename:"gretty-${_version}.jar", summary:"Gretty $_version", labels:"Featured", verbose:"true")
+
+  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty/build/libs/gretty-${_version}-sources.jar").absolutePath, targetfilename:"gretty-${_version}-sources.jar", summary:"Gretty $_version sources", labels:"Featured", verbose:"true")
+
+  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-hazelcast/build/libs/gretty-hazelcast-${_version}.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}.jar", summary:"Gretty Hazelcast module $_version", labels:"Featured", verbose:"true")
+
+  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-hazelcast/build/libs/gretty-hazelcast-${_version}-sources.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}-sources.jar", summary:"Gretty Haselcast module $_version sources", labels:"Featured", verbose:"true")
 }
 
 task wrapper(type: Wrapper) {
