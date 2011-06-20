@@ -16,6 +16,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
+    <content url="file://$MODULE_DIR$/../redis" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library" exported="">
@@ -174,6 +175,17 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
+          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/jars/junit-4.8.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/sources/junit-4.8.1-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
           <root url="jar://$USER_HOME$/.gradle/cache/org.codehaus.groovy/groovy/jars/groovy-1.8.0.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -239,17 +251,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/jars/junit-4.8.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/sources/junit-4.8.1-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$USER_HOME$/.gradle/cache/org.jboss.netty/netty/bundles/netty-3.2.4.Final.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -288,17 +289,6 @@
         <JAVADOC />
         <SOURCES>
           <root url="jar://$USER_HOME$/.gradle/cache/commons-cli/commons-cli/sources/commons-cli-1.1-sources.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" scope="TEST">
-      <library>
-        <CLASSES>
-          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/jars/junit-4.8.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$USER_HOME$/.gradle/cache/junit/junit/sources/junit-4.8.1-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>

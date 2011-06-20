@@ -1,1 +1,1 @@
-include 'gretty', 'gretty-hazelcast'
+include 'gretty', 'gretty-hazelcast', 'gretty-redis'

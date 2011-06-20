@@ -26,13 +26,21 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
 @Trait abstract class HttpRequestHelper {
 
     void doTest (String request, Function1<GrettyHttpResponse,Void> action) {
-        doTest([uri:request], action)
+        doTest([uri:request], "test_server", action)
+    }
+
+    void doTest (String request, String address, Function1<GrettyHttpResponse,Void> action) {
+        doTest([uri:request], address, action)
     }
 
     void doTest (GrettyHttpRequest request, Function1<GrettyHttpResponse,Void> action) {
+        doTest(request, "test_server", action)
+    }
+
+    void doTest (GrettyHttpRequest request, String address, Function1<GrettyHttpResponse,Void> action) {
         BindLater cdl = []
 
-        GrettyClient client = [new LocalAddress("test_server")]
+        GrettyClient client = [new LocalAddress(address)]
         client.connect{ future ->
             client.request(request) { bound ->
                 try {
@@ -49,11 +57,11 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
         client.disconnect ()
     }
 
-    void doTest (String request, Closure action) {
-        doTest(request, { req -> action(req) } )
+    void doTest (String request, String address = "test_server", Closure action) {
+        doTest(request, address, { req -> action(req) } )
     }
 
-    void doTest (GrettyHttpRequest request, Closure action) {
-        doTest(request, { req -> action(req) } )
+    void doTest (GrettyHttpRequest request, String address = "test_server", Closure action) {
+        doTest(request, address, { req -> action(req) } )
     }
 }

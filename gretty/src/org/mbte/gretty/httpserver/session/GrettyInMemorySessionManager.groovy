@@ -23,12 +23,12 @@ import groovypp.concurrent.BindLater
     private final ConcurrentHashMap<String,GrettySession> sessions = [:]
 
     GrettySession getSession(String id) {
-        sessions[id]
+        sessions[id][server: server]
     }
 
     BindLater<GrettySession> getSessionAsync(String id, SessionCallback callback = null) {
         def later = callback ?: new BindLater()
-        later.set(sessions[id])
+        later.set(sessions[id][server: server])
         later
     }
 
