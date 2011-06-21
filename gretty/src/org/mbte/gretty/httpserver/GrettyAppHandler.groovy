@@ -53,18 +53,6 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
         this.server = server
     }
 
-    def void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-//        if(logger.isEnabled(InternalLogLevel.DEBUG))
-//            logger.debug("${ctx.channel} CONNECTED")
-        super.channelConnected(ctx, e)
-    }
-
-    def void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-//        if(logger.isEnabled(InternalLogLevel.DEBUG))
-//            logger.debug("${ctx.channel} DISCONNECTED")
-        super.channelDisconnected(ctx, e)
-    }
-
     void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
         def msg = e.message
         switch(msg) {
@@ -74,6 +62,8 @@ import org.jboss.netty.handler.codec.http.HttpMessageEncoder
                     handleWebSocketRequest(ctx, e)
                 }
                 else {
+                    server.ioMonitor.httpRequests.incrementAndGet()
+                    server.ioMonitor.totalHttpRequests.incrementAndGet()
                     server.execute {
                         handleHttpRequest(req, e)
                     }

@@ -34,9 +34,14 @@ import org.jboss.netty.channel.Channels
 import org.jboss.netty.channel.ChannelPipelineFactory
 import java.util.concurrent.ExecutorService
 import org.mbte.gretty.httpserver.IoMonitor
+import org.jboss.netty.logging.InternalLogLevel
+import org.jboss.netty.logging.InternalLoggerFactory
+import org.jboss.netty.logging.InternalLogger
 
 @Typed abstract class AbstractServer extends SimpleChannelHandler implements Executor, ChannelPipelineFactory {
-    IoMonitor ioMonitor = []
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractServer)
+
+    final IoMonitor ioMonitor = []
 
     int              ioWorkerCount      = 2*Runtime.getRuntime().availableProcessors()
     int              serviceWorkerCount = 4*Runtime.getRuntime().availableProcessors()
@@ -67,16 +72,37 @@ import org.mbte.gretty.httpserver.IoMonitor
         channel.closeFuture.addListener {
             [bossExecutor, ioExecutor, threadPool]*.shutdown()
         }
+
+        if(logger.isInfoEnabled())
+            logger.info("Started server on $localAddress")
     }
 
     void stop() {
+        if(logger.isInfoEnabled())
+            logger.info("Sttopping server on $localAddress")
+
         allConnected.close().awaitUninterruptibly()
         channel.close().awaitUninterruptibly()
     }
 
     void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        if(logger.isEnabled(InternalLogLevel.DEBUG))
+            logger.debug("${ctx.channel} connected")
+
+        ioMonitor.connectedChannels.incrementAndGet ()
+        ioMonitor.totalChannels.incrementAndGet ()
+
         allConnected.add(ctx.channel)
         super.channelConnected(ctx, e)
+    }
+
+    void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
+        if(logger.isEnabled(InternalLogLevel.DEBUG))
+            logger.debug("${ctx.channel} disconnected")
+
+        ioMonitor.connectedChannels.decrementAndGet ()
+
+        super.channelDisconnected(ctx, e)
     }
 
     void execute(Runnable command) {
@@ -96,5 +122,9 @@ import org.mbte.gretty.httpserver.IoMonitor
 
     ExecutorService getThreadPool () {
         this.threadPool
+    }
+
+    void setLogStatistics(boolean log) {
+        ioMonitor.logStatistics = log
     }
 }

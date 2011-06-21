@@ -21,11 +21,21 @@ import org.jboss.netty.channel.ChannelHandlerContext
 import org.jboss.netty.channel.WriteCompletionEvent
 import org.jboss.netty.channel.MessageEvent
 import org.jboss.netty.buffer.ChannelBuffer
+import org.jboss.netty.logging.InternalLoggerFactory
+import org.jboss.netty.logging.InternalLogger
+import java.lang.management.ManagementFactory
 
 @Typed class IoMonitor extends SimpleChannelHandler {
 
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(IoMonitor)
+
+    private long lastTime
+
     volatile long bytesSent, bytesReceived
     volatile long totalBytesSent, totalBytesReceived
+    volatile long connectedChannels, totalChannels
+
+    volatile long totalHttpRequests, httpRequests
 
     void writeComplete(ChannelHandlerContext ctx, WriteCompletionEvent e) {
         bytesSent.addAndGet(e.writtenAmount)
@@ -39,11 +49,33 @@ import org.jboss.netty.buffer.ChannelBuffer
         super.messageReceived(ctx, e)
     }
 
-    long getAndCleanSent () {
-        bytesSent.getAndSet(0)
-    }
+    void setLogStatistics(boolean log) {
+        if(log) {
+            lastTime = System.currentTimeMillis()
+            new Timer().schedule({
+                def curTime = System.currentTimeMillis()
+                if(curTime != lastTime) {
+                    def osBean = ManagementFactory.getOperatingSystemMXBean()
+                    def memBean = ManagementFactory.memoryMXBean
 
-    long getAndCleanReceived () {
-        bytesReceived.getAndSet(0)
+                    logger.info """Server Statistic:
+    Open connections:    $connectedChannels
+    Total connections:   $totalChannels
+
+    Http requests:       ${(httpRequests.getAndSet(0)*1000d)/(curTime-lastTime)} req/sec
+    Total http requests: $totalHttpRequests
+
+    Bytes In:            ${bytesReceived.getAndSet(0)/((curTime-lastTime)*1.024d)} Kb/sec
+    Bytes Out:           ${bytesSent.getAndSet(0)/((curTime-lastTime)*1.024d)} Kb/sec
+    TotalBytesSent:      $totalBytesSent
+    TotalBytesReceived:  $totalBytesReceived
+
+    Heap Memory:         ${memBean.heapMemoryUsage}
+    Non Heap Memory:     ${memBean.nonHeapMemoryUsage}
+    System load:         ${osBean.systemLoadAverage}"""
+                    lastTime = curTime
+                }
+            }, 5000, 5000)
+        }
     }
 }

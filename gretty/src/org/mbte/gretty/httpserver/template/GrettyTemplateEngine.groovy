@@ -20,8 +20,12 @@ package org.mbte.gretty.httpserver.template
 
 import groovypp.text.GppSimpleTemplateEngine
 import groovypp.text.GppTemplateScript
+import org.jboss.netty.logging.InternalLoggerFactory
+import org.jboss.netty.logging.InternalLogger
 
 @Typed class GrettyTemplateEngine extends GppSimpleTemplateEngine {
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(GrettyTemplateEngine)
+
     GrettyTemplateEngine (ClassLoader classLoader, String scriptClass = GrettyTemplateScript.name) {
         super(classLoader, scriptClass)
     }
@@ -37,11 +41,12 @@ import groovypp.text.GppTemplateScript
     }
 
     protected void logCompilationError(Throwable throwable) {
-        println "Compilation error"
-        throwable.printStackTrace()
+        if(logger.isInfoEnabled())
+            logger.info "Compilation error", throwable
     }
 
     protected void logAttemptToCompile(File file) {
-        println "Trying to compile ${file.canonicalPath}"
+        if(logger.isInfoEnabled())
+            logger.info("Trying to compile ${file.canonicalPath}")
     }
 }

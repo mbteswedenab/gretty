@@ -10,6 +10,8 @@ GrettyServer server = [
         response.redirect "/"
     },
 
+    logStatistics: true,
+
     dir: "web",
 
     "/": {
