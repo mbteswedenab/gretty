@@ -11,7 +11,18 @@
         %>
     </head>
     <body>
+        <%
+            include "./bodyHeader.gpptl", [headerMessage: "HEADER"]
+        %>
         ${message}(from template)<br>
         <a href="/gindex.html">Hello, World! (from static file)</a>
+        <%
+            def line = loadTemplate("line.gpp")
+            for(i in 0..<10)
+                line lineNum: i, lineText: "line #$i"
+        %>
+        <%
+            include "../templates/bodyFooter.gpptl",  [footerMessage: "FOOTER"]
+        %>
     </body>
 </html>

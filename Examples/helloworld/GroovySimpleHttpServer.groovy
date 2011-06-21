@@ -16,9 +16,6 @@
 
 package examples
 
-@GrabResolver(name='gretty', root='http://groovypp.artifactoryonline.com/groovypp/libs-releases-local')
-@Grab('org.mbte.groovypp:gretty:0.4.264')
-
 import org.mbte.gretty.httpserver.GrettyServer
 
 GrettyServer server = []

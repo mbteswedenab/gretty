@@ -1,0 +1,5 @@
+Integer index = lineNum
+
+def color = index & 1 ? '#7F0000' : '#007F00'
+
+out.println "<div style='background-color: $color; color: #ffffff;'>$lineText<div>"

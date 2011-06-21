@@ -125,13 +125,14 @@ abstract class GrettyHttpHandler implements Cloneable {
         response.redirect(where)
     }
 
-    String template(String file, Map root = [:], Function1<Map,Object> dataBinding = null) {
+    String template(String fileName, Map root = [:], Function1<Map,Object> dataBinding = null) {
         root.request = request
 
         dataBinding?.call(root)
 
-        def template = context.templateEngine.getTemplateClass([file])
-        GrettyTemplateScript script = template.newInstance() [grettyHttpHandler: this]
+        def file = new File(fileName).canonicalFile
+        def template = context.templateEngine.getTemplateClass(file)
+        GrettyTemplateScript script = template.newInstance() [grettyHttpHandler: this, file: file]
         def writer = new FastStringWriter()
         script.writeTo(root, writer)
         writer.toString()
