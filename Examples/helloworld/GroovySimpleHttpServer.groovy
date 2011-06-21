@@ -16,13 +16,16 @@
 
 package examples
 
+@GrabResolver(name='gretty', root='http://groovypp.artifactoryonline.com/groovypp/libs-releases-local')
+@Grab('org.mbte.groovypp:gretty:0.4.264')
+
 import org.mbte.gretty.httpserver.GrettyServer
 
 GrettyServer server = []
 server.groovy = [
     localAddress: new InetSocketAddress("localhost", 8080),
 
-    static: "static",
+    dir: "web",
 
     default: {
         response.redirect "/"
@@ -30,7 +33,7 @@ server.groovy = [
 
     "/": {
         get {
-            response.html = template("./templates/main.gpptl") { binding ->
+            response.html = template("web/templates/main.gpptl") { binding ->
                 binding.title = 'Hello, World!'
                 binding.message = 'Hello, Dynamic World!'
             }

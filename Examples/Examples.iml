@@ -8,6 +8,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="gretty" exported="" />
+    <orderEntry type="library" name="groovy-1.8.0" level="project" />
   </component>
 </module>
 
