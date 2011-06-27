@@ -1,27 +1,24 @@
 /*
- * Copyright 2009-2011 MBTE Sweden AB.
+ * Copyright 2009-2010 MBTE Sweden AB.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
-
 
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.*
 
 import org.jboss.netty.handler.stream.ChunkedWriteHandler
-import org.jboss.netty.logging.InternalLogLevel
 
 import org.mbte.gretty.AbstractServer
 import java.util.concurrent.Executor
@@ -32,33 +29,94 @@ import org.codehaus.groovy.runtime.GeneratedClosure
 import org.mbte.gretty.httpserver.session.GrettySessionManager
 
 import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
+import org.jboss.netty.logging.InternalLoggerFactory
+import org.jboss.netty.logging.InternalLogger
+import org.mbte.gretty.httpclient.HttpRequestHelper
 
-@Typed class GrettyServer extends AbstractServer {
+@Typed class GrettyServer extends AbstractServer<GrettyServer> implements HttpRequestHelper {
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(GrettyServer)
+
     GrettyContext defaultContext
 
     GrettySessionManager sessionManager
 
-    InternalLogLevel logLevel
-
     GrettyServer() {
-        localAddress = new InetSocketAddress(8080)
         sessionManager = new GrettyInMemorySessionManager()
     }
 
     void setUnresolvedProperty(String name, GrettyRestDescription description) {
-        addRestDescription(name, description)
+        handler(name, description)
     }
 
-    void addRestDescription(String name, GrettyRestDescription description) {
+    GrettyServer handler(String name, GrettyRestDescription description) {
         if (!defaultContext)
             defaultContext = []
         defaultContext.setUnresolvedProperty(name, description)
+        this
     }
 
-    void setDefault (GrettyHttpHandler handler) {
+    void addWebContext (String name, GrettyContext context) {
         if(!defaultContext)
             defaultContext = []
-        defaultContext.default = handler
+        defaultContext.addWebContext(name, context)
+        this
+    }
+
+    GrettyServer webContext (String name, GrettyContext context) {
+        addWebContext(name, context)
+        this
+    }
+
+    GrettyServer webContext (String name, String path) {
+        addWebContext(name, new GrettyContext(path))
+        this
+    }
+
+    GrettyHttpHandler getDefaultHandler () {
+        defaultContext?.defaultHandler
+    }
+
+    void setDefaultHandler (GrettyHttpHandler handler) {
+        if(!defaultContext)
+            defaultContext = []
+        defaultContext.defaultHandler = handler
+    }
+
+    GrettyServer defaultHandler(GrettyHttpHandler handler) {
+        this[defaultHandler: handler]
+    }
+
+    def methodMissing(String name, Object _args) {
+        Object [] args = _args
+        switch(name) {
+            case "defaultHandler":
+                if(args?.length == 1 && args[0] instanceof Closure) {
+                    return defaultHandler( GrettyHttpHandler.fromClosure((Closure)args[0]) )
+                }
+            break
+
+            case "doTest":
+                if(args?.length == 2 && args[1] instanceof Closure) {
+                    if(args[0] instanceof GrettyHttpRequest)
+                        return doTest(((GrettyHttpRequest)args[0])) { resp -> ((Closure)args[1])(resp) }
+                    else
+                        return doTest(args[0].toString()) { resp -> ((Closure)args[1])(resp) }
+                }
+
+                if(args?.length == 3 && args[1] instanceof SocketAddress && args[2] instanceof Closure) {
+                    if(args[0] instanceof GrettyHttpRequest)
+                        return doTest((GrettyHttpRequest)args[0], (SocketAddress)args[1]) { resp -> ((Closure)args[2])(resp) }
+                    else
+                        return doTest(args[0].toString(), (SocketAddress)args[1]) { resp -> ((Closure)args[2])(resp) }
+                }
+            break
+        }
+
+        if(args?.length == 1 && args[0] instanceof Closure) {
+            return handler(name, GrettyRestDescription.fromClosure((Closure)args[0]))
+        }
+
+        throw new MissingMethodException(name, this.class, args)
     }
 
     void setStatic (String staticFiles) {
@@ -77,6 +135,10 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
         if(!defaultContext)
             defaultContext = []
         defaultContext.public = description
+    }
+
+    GrettyServer dir(String path) {
+        this[dir: path]
     }
 
     void setDir(String path) {
@@ -109,12 +171,6 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
         sessionManager.server = null
     }
 
-    public void addWebContext (String name, GrettyContext context) {
-        if(!defaultContext)
-            defaultContext = []
-        defaultContext.addWebContext(name, context)
-    }
-
     protected void buildPipeline(ChannelPipeline pipeline) {
         super.buildPipeline(pipeline)
 
@@ -125,10 +181,6 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
 
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler())
         pipeline.addLast("fileWriter", new FileWriteHandler())
-
-        def logger = logLevel ? new HttpLoggingHandler(logLevel) : null
-        if (logger)
-            pipeline.addLast("http.logger", logger)
 
         pipeline.addLast("http.application", new GrettyAppHandler(this))
     }
@@ -154,5 +206,13 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
             else
                 property.setProperty(this, e.value)
         }
+    }
+
+    /**
+     * for HttpRequestHelper.doTest()
+     * @return local address of the server
+     */
+    SocketAddress getTestServerAddress () {
+        localAddress
     }
 }

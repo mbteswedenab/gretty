@@ -1,17 +1,17 @@
 /*
- * Copyright 2009-2011 MBTE Sweden AB.
+ * Copyright 2009-2010 MBTE Sweden AB.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 package org.mbte.gretty.httpclient
@@ -25,22 +25,26 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
 
 @Trait abstract class HttpRequestHelper {
 
-    void doTest (String request, Function1<GrettyHttpResponse,Void> action) {
-        doTest([uri:request], "test_server", action)
+    SocketAddress getTestServerAddress () {
+        new LocalAddress("test_server")
     }
 
-    void doTest (String request, String address, Function1<GrettyHttpResponse,Void> action) {
+    void doTest (String request, Function1<GrettyHttpResponse,Void> action) {
+        doTest([uri:request], testServerAddress, action)
+    }
+
+    void doTest (String request, SocketAddress address, Function1<GrettyHttpResponse,Void> action) {
         doTest([uri:request], address, action)
     }
 
     void doTest (GrettyHttpRequest request, Function1<GrettyHttpResponse,Void> action) {
-        doTest(request, "test_server", action)
+        doTest(request, testServerAddress, action)
     }
 
-    void doTest (GrettyHttpRequest request, String address, Function1<GrettyHttpResponse,Void> action) {
+    void doTest (GrettyHttpRequest request, SocketAddress address, Function1<GrettyHttpResponse,Void> action) {
         BindLater cdl = []
 
-        GrettyClient client = [new LocalAddress(address)]
+        GrettyClient client = [address]
         client.connect{ future ->
             client.request(request) { bound ->
                 try {
@@ -57,11 +61,35 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
         client.disconnect ()
     }
 
-    void doTest (String request, String address = "test_server", Closure action) {
-        doTest(request, address, { req -> action(req) } )
+    GrettyHttpResponse doTest (String request) {
+        doTest([uri:request], testServerAddress,)
     }
 
-    void doTest (GrettyHttpRequest request, String address = "test_server", Closure action) {
-        doTest(request, address, { req -> action(req) } )
+    GrettyHttpResponse doTest (String request, SocketAddress address) {
+        doTest([uri:request], address)
+    }
+
+    GrettyHttpResponse doTest (GrettyHttpRequest request) {
+        doTest(request, testServerAddress)
+    }
+
+    GrettyHttpResponse doTest (GrettyHttpRequest request, SocketAddress address) {
+        BindLater cdl = []
+
+        GrettyClient client = [address]
+        client.connect{ future ->
+            client.request(request) { bound ->
+                try {
+                    cdl.set(bound.get())
+                }
+                catch(Throwable e) {
+                    cdl.setException(e)
+                }
+            }
+        }
+
+        def res = cdl.get()
+        client.disconnect ()
+        res
     }
 }

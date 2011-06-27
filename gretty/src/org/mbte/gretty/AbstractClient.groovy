@@ -1,17 +1,17 @@
 /*
- * Copyright 2009-2011 MBTE Sweden AB.
+ * Copyright 2009-2010 MBTE Sweden AB.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 
@@ -29,12 +29,8 @@ import org.jboss.netty.channel.socket.ClientSocketChannelFactory
 import org.mbte.gretty.httpclient.AbstractClientHandler
 import java.nio.channels.ClosedChannelException
 
-@Typed class AbstractClient extends SimpleChannelHandler implements ChannelPipelineFactory, AbstractClientHandler {
-    protected volatile Channel channel
-
+@Typed class AbstractClient<OwnType> extends BaseChannelHandler<OwnType> implements AbstractClientHandler {
     protected final SocketAddress remoteAddress
-
-    SocketAddress localAddress
 
     protected final ChannelFactory channelFactory
     protected final boolean shouldReleaseResources = true
@@ -69,6 +65,7 @@ import java.nio.channels.ClosedChannelException
 
         def connectFuture = bootstrap.connect(remoteAddress, localAddress)
 
+        channel = connectFuture.channel
         connectFuture.addListener { future ->
             if(shouldReleaseResources) {
                 future.channel.closeFuture.addListener { future2 ->
@@ -91,7 +88,8 @@ import java.nio.channels.ClosedChannelException
     }
 
     void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) {
-        channel = ctx.channel
+        if(!channel)
+            channel = e.channel
         onConnect()
     }
 
@@ -126,16 +124,6 @@ import java.nio.channels.ClosedChannelException
 
     void disconnect() {
         close()
-    }
-
-    ChannelPipeline getPipeline () {
-        def pipeline = Channels.pipeline()
-        buildPipeline(pipeline)
-        pipeline
-    }
-
-    protected void buildPipeline(ChannelPipeline pipeline) {
-        pipeline.addFirst("clientItself", this)
     }
 
     ChannelFuture write(Object message) {

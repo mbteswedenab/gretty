@@ -39,7 +39,7 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
 
                 sessionManager: new GrettyHazelcastSessionManager(hazelcast),
 
-                default: {
+                defaultHandler: {
                     Integer obj = session.counter
                     println "$i: $obj"
                     if(obj == null) {
@@ -70,7 +70,7 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
             if(sessionId.get())
                 req.addCookie("JSESSIONID", sessionId.get().toString())
 
-            doTest(req, "test_server_${i%3}") { GrettyHttpResponse response ->
+            doTest(req, new LocalAddress("test_server_${i%3}")) { GrettyHttpResponse response ->
                 def session = response.getCookie("JSESSIONID")?.value
                 sessionId.set(session)
                 println "$i ${response.contentText} $session"

@@ -31,7 +31,7 @@ import com.hazelcast.config.MapConfig
         server = [
             sessionManager: new GrettyHazelcastSessionManager(hazelcast),
 
-            default: {
+            defaultHandler: {
                 Integer obj = session.counter
                 if(obj == null) {
                     session.counter = obj = 1

@@ -33,7 +33,7 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
 
             webContexts: [
                 "/" : [
-                    default: {
+                    defaultHandler: {
                         response.addHeader "Default", "true"
                         for(p in request.parameters.entrySet())
                             response.addHeader(p.key, p.value.toString())
@@ -48,7 +48,7 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
         proxy = [
             localAddress: new LocalAddress("test_server"),
 
-            default: {
+            defaultHandler: {
                 myProxy.handle(request, response)
             },
 

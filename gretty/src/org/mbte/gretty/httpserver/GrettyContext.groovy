@@ -1,17 +1,17 @@
 /*
- * Copyright 2009-2011 MBTE Sweden AB.
+ * Copyright 2009-2010 MBTE Sweden AB.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 
 
@@ -29,11 +29,15 @@ import org.jboss.netty.handler.codec.http.HttpMethod
 import org.mbte.gretty.httpserver.template.GrettyTemplateEngine
 import org.mbte.gretty.httpserver.template.GrettyTemplateScript
 import groovypp.text.FastStringWriter
+import org.jboss.netty.logging.InternalLoggerFactory
+import org.jboss.netty.logging.InternalLogger
 
 /**
  * Corresponds to sub-path of application.
  */
 @Typed class GrettyContext {
+    private static final InternalLogger logger = InternalLoggerFactory.getInstance(GrettyContext)
+
     GrettyContext(String path = null) {
         if(path) {
             dir = path
@@ -200,7 +204,8 @@ import groovypp.text.FastStringWriter
         if(staticFiles) {
             def file = new File(staticFiles).canonicalFile
             if(!file.exists() || !file.directory || file.hidden) {
-                throw new IOException("directory $staticFiles does not exists or hidden")
+                logger.info("directory $staticFiles does not exists or hidden")
+                staticFiles = null
             }
             else {
                 staticFiles = file.absoluteFile.canonicalPath
