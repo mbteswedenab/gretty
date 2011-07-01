@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.HttpMethod
@@ -36,7 +38,7 @@ Request path: \${request.uri} URI: \${uri ?: request.uri.toUpperCase() }\
 
         scriptFile = File.createTempFile("temp_", "_script.groovy", root)
         scriptFile.text = """\
-        print "issue: \${request.parameters.issue[0]} reporter: \${request.parameters.reporter[0]}"
+        print "issue: \${request.parameters.issue} reporter: \${request.parameters.reporter}"
 """
         scriptFile.deleteOnExit()
 

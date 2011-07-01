@@ -16,8 +16,8 @@
 
 apply plugin: 'idea'
 
-def _version = '0.4.268'
-def _gppVersion = '0.4.268_1.8.0'
+def _version = '0.4.279'
+def _gppVersion = '0.4.279_1.8.0'
 
 Set groovyProjects = ['gretty', 'gretty-hazelcast']
 

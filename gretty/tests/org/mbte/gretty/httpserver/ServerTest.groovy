@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.local.LocalAddress
@@ -32,8 +34,8 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
                 "/" : [
                     public: {
                         get("/data/:mapId/set/:objectId") {
-                            response.addHeader("mapId", it.mapId)
-                            response.addHeader("objectId",  it.objectId)
+                            response.addHeader("mapId", request.parameters.mapId)
+                            response.addHeader("objectId",  request.parameters.objectId)
                         }
 
                         get("/data/") {}
@@ -46,7 +48,7 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
                     default: {
                         response.addHeader "Default", "true"
                         for(p in request.parameters.entrySet())
-                            response.addHeader(p.key, p.value.toString())
+                            response.addHeader(p.key, p.value)
                         response.text = "default: path: ${request.path}"
                     }
                 ]
@@ -67,8 +69,8 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
 
             assertEquals "default: path: /data", text
             assertEquals "true", response.getHeader("Default")
-            assertEquals "[12]", response.getHeader("msg")
-            assertEquals "[33]", response.getHeader("value")
+            assertEquals "12", response.getHeader("msg")
+            assertEquals "33", response.getHeader("value")
         }
     }
 

@@ -26,14 +26,14 @@ public class JavaSimpleHttpServer {
             .localAddress(new InetSocketAddress("localhost", 8080))
             .dir("web")
             .defaultHandler(new GrettyHttpHandler() {
-                public void handle(Map<String, String> pathArguments) {
+                public void handle() {
                     getResponse().redirect("/");
                 }
             })
             .handler("/", new GrettyRestDescription() {
                 public void run() {
                     get(new GrettyHttpHandler() {
-                        public void handle(Map<String, String> pathArguments) {
+                        public void handle() {
                             Map binding = new HashMap();
                             binding.put("title", "Hello, World!");
                             binding.put("message", "Hello, Java World");

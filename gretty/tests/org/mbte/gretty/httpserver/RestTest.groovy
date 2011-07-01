@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.local.LocalAddress
@@ -37,16 +39,16 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
                     public: {
                         rest("/data/:mapId/:objectId") {
                             get {
-                                response.addHeader("mapId", it.mapId)
-                                response.addHeader("objectId",  it.objectId)
+                                response.addHeader("mapId", request.parameters.mapId)
+                                response.addHeader("objectId",  request.parameters.objectId)
                                 response.addHeader("method",  "get")
                                 response.text = "OK"
                                 response.status = HttpResponseStatus.OK
                             }
 
                             post {
-                                response.addHeader("mapId", it.mapId)
-                                response.addHeader("objectId",  it.objectId)
+                                response.addHeader("mapId", request.parameters.mapId)
+                                response.addHeader("objectId",  request.parameters.objectId)
                                 response.addHeader("method",  "post")
                                 response.text = request.content.asString().toUpperCase()
                                 response.status = HttpResponseStatus.OK

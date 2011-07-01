@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.httpserver
 
 import static org.jboss.netty.handler.codec.http.HttpHeaders.Names.*
@@ -30,7 +32,7 @@ import org.mbte.gretty.JacksonCategory
 class GrettyHttpRequest extends DefaultHttpRequest {
 
     private String path
-    private Map<String, List<String>> params
+    private Map<String, String> params
     private boolean followRedirects = false
 
     Set<Cookie> cookies
@@ -60,9 +62,14 @@ class GrettyHttpRequest extends DefaultHttpRequest {
         path
     }
 
-    Map<String, List<String>> getParameters() {
-        if(params == null)
-            params = new QueryStringDecoder(uri).parameters
+    Map<String, String> getParameters() {
+        if(params == null) {
+            def decoded = new QueryStringDecoder(uri).parameters
+            params = new LinkedHashMap()
+            for (e in decoded.entrySet()) {
+                params[e.key] = e.value.get(0)
+            }
+        }
         params
     }
     

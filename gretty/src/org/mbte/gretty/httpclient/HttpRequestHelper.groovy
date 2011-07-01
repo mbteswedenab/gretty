@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+
+
 package org.mbte.gretty.httpclient
 
 import org.jboss.netty.channel.local.LocalAddress
@@ -22,7 +24,9 @@ import groovypp.concurrent.BindLater
 import org.jboss.netty.handler.codec.http.HttpResponse
 import org.mbte.gretty.httpserver.GrettyHttpRequest
 import org.mbte.gretty.httpserver.GrettyHttpResponse
+import sun.security.util.Debug
 
+@Typed
 @Trait abstract class HttpRequestHelper {
 
     SocketAddress getTestServerAddress () {
@@ -93,3 +97,5 @@ import org.mbte.gretty.httpserver.GrettyHttpResponse
         res
     }
 }
+
+//'lala'

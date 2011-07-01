@@ -14,4 +14,4 @@
  *  limitations under the License.
  */
 
-include 'gretty', 'gretty-hazelcast', 'gretty-scala'
+include 'gretty', 'gretty-hazelcast' /*, 'gretty-scala' */

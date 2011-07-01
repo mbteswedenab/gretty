@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.mbte.gretty.JacksonCategory
@@ -47,8 +49,8 @@ abstract class GrettyHttpHandler implements Cloneable {
             closure.resolveStrategy = Closure.DELEGATE_FIRST
         }
 
-        void handle(Map<String, String> pathArguments) {
-            closure(pathArguments)
+        void handle() {
+            closure()
         }
 
         protected def clone() {
@@ -84,7 +86,9 @@ abstract class GrettyHttpHandler implements Cloneable {
         new GrettyHttpHandlerAroundClosure(closure)
     }
 
-    final void handle (GrettyHttpRequest request, GrettyHttpResponse response, Map<String,String> pathArgs) {
+    abstract void handle()
+
+    final void handle (GrettyHttpRequest request, GrettyHttpResponse response) {
         GrettyHttpHandler clone = clone ()
         clone.request  = request
         clone.response = response
@@ -92,7 +96,7 @@ abstract class GrettyHttpHandler implements Cloneable {
         def saved = grettyHandler.get()
         grettyHandler.set(clone)
         try {
-            clone.handle (pathArgs)
+            clone.handle()
         }
         finally {
             grettyHandler.set(saved)
@@ -152,8 +156,6 @@ abstract class GrettyHttpHandler implements Cloneable {
                 response.complete()
         }
     }
-
-    abstract void handle(Map<String,String> pathArguments)
 
     GrettySession getSession(boolean force = true) {
         def res = response.session

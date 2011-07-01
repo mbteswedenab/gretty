@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.*
@@ -151,6 +153,10 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
         if(!defaultContext)
             defaultContext = []
         defaultContext.webContexts = webContexts
+    }
+
+    GrettyServer webContexts(Map<String,GrettyContext> webContexts) {
+        this[webContexts: webContexts]
     }
 
     void start () {

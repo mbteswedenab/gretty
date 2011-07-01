@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.local.LocalAddress
@@ -45,13 +47,13 @@ import sun.security.util.Debug
 
                     "/api2/:command": {
                         get {
-                            response.html = "api2: ${it.command}"
+                            response.html = "api2: ${request.parameters.command}"
                         }
                     },
 
                     public: {
-                        get("/api/:command") { args ->
-                            response.html = "api: ${args.command}"
+                        get("/api/:command") {
+                            response.html = "api: ${request.parameters.command}"
                         }
                     }
                 ]

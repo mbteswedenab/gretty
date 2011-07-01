@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.HttpHeaders
@@ -168,14 +170,17 @@ import org.jboss.netty.logging.InternalLogger
         for(matcher in methodHandlers) {
             def pathArgs = matcher.doesMatch(localUri)
             if(pathArgs != null) {
-                matcher.handler.handle(request, response, pathArgs)
+                for(e in pathArgs.entrySet()) {
+                    request.parameters[e.key] = e.value
+                }
+                matcher.handler.handle(request, response)
                 return
             }
         }
 
         // own default handler (maybe delegates to parent default)
         if (defaultHandler) {
-            defaultHandler.handle(request, response, Collections.emptyMap())
+            defaultHandler.handle(request, response)
             return
         }
 
