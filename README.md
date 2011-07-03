@@ -2,4 +2,4 @@ Gretty is a simple web framework for both building web servers and clients. Buil
 
 All you need to get started is Groovy 1.8.0+ installed.
 
-[Getting Started](https://github.com/alextkachman/gretty/wiki)
+[Getting Started](https://github.com/gretty/gretty/wiki)
