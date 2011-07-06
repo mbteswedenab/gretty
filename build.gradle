@@ -92,33 +92,37 @@ subprojects { prj ->
         archives sourcesJar
     }
 
-    uploadArchives {
-        repositories.mavenDeployer {
-            def repo = "http://groovypp.artifactoryonline.com/groovypp/libs-releases-local/"
-            if(System.getProperty("repo") == 'local')
-                repo = 'file://' + new File(System.getProperty('user.home'), ".m2${File.separatorChar}repository").absolutePath
-            repository(url: repo) {
-                authentication(userName: ARTIFACTORY_USER, password: ARTIFACTORY_PASSWORD)
+    if (project.hasProperty('ARTIFACTORY_USER') && project.hasProperty('ARTIFACTORY_PASSWORD')) {
+        uploadArchives {
+            repositories.mavenDeployer {
+                def repo = "http://groovypp.artifactoryonline.com/groovypp/libs-releases-local/"
+                if(System.getProperty("repo") == 'local')
+                    repo = 'file://' + new File(System.getProperty('user.home'), ".m2${File.separatorChar}repository").absolutePath
+                repository(url: repo) {
+                    authentication(userName: ARTIFACTORY_USER, password: ARTIFACTORY_PASSWORD)
+                }
             }
         }
     }
 }
 
 
-task deployGoogle(dependsOn:[':gretty:sourcesJar', ':gretty:jar', ':gretty-hazelcast:jar', ':gretty-hazelcast:sourcesJar']) << {
-  ant.taskdef(name:"gcupload", classname:"net.bluecow.googlecode.ant.GoogleCodeUploadTask", classpath:"lib/ant-googlecode-0.0.2.jar")
+if (project.hasProperty('ARTIFACTORY_USER') && project.hasProperty('ARTIFACTORY_PASSWORD')) {
+    task deployGoogle(dependsOn:[':gretty:sourcesJar', ':gretty:jar', ':gretty-hazelcast:jar', ':gretty-hazelcast:sourcesJar']) << {
+      ant.taskdef(name:"gcupload", classname:"net.bluecow.googlecode.ant.GoogleCodeUploadTask", classpath:"lib/ant-googlecode-0.0.2.jar")
 
-  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-api/build/libs/gretty-api-${_version}.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}.jar", summary:"Gretty API module $_version (Use with Groovy++ $_gppVersion)", labels:"Featured", verbose:"true")
+      ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-api/build/libs/gretty-api-${_version}.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}.jar", summary:"Gretty API module $_version (Use with Groovy++ $_gppVersion)", labels:"Featured", verbose:"true")
 
-  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-api/build/libs/gretty-api-${_version}-sources.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}-sources.jar", summary:"Gretty API module $_version sources", labels:"Featured", verbose:"true")
+      ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-api/build/libs/gretty-api-${_version}-sources.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}-sources.jar", summary:"Gretty API module $_version sources", labels:"Featured", verbose:"true")
 
-  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty/build/libs/gretty-${_version}.jar").absolutePath, targetfilename:"gretty-${_version}.jar", summary:"Gretty $_version (Use with Groovy++ $_gppVersion)", labels:"Featured", verbose:"true")
+      ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty/build/libs/gretty-${_version}.jar").absolutePath, targetfilename:"gretty-${_version}.jar", summary:"Gretty $_version (Use with Groovy++ $_gppVersion)", labels:"Featured", verbose:"true")
 
-  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty/build/libs/gretty-${_version}-sources.jar").absolutePath, targetfilename:"gretty-${_version}-sources.jar", summary:"Gretty $_version sources", labels:"Featured", verbose:"true")
+      ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty/build/libs/gretty-${_version}-sources.jar").absolutePath, targetfilename:"gretty-${_version}-sources.jar", summary:"Gretty $_version sources", labels:"Featured", verbose:"true")
 
-  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-hazelcast/build/libs/gretty-hazelcast-${_version}.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}.jar", summary:"Gretty Hazelcast module $_version (Use with Groovy++ $_gppVersion)", labels:"Featured", verbose:"true")
+      ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-hazelcast/build/libs/gretty-hazelcast-${_version}.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}.jar", summary:"Gretty Hazelcast module $_version (Use with Groovy++ $_gppVersion)", labels:"Featured", verbose:"true")
 
-  ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-hazelcast/build/libs/gretty-hazelcast-${_version}-sources.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}-sources.jar", summary:"Gretty Haselcast module $_version sources", labels:"Featured", verbose:"true")
+      ant.gcupload(username:GOOGLE_USER, password:GOOGLE_PASSWORD, projectname:"groovypptest", filename:file("gretty-hazelcast/build/libs/gretty-hazelcast-${_version}-sources.jar").absolutePath, targetfilename:"gretty-hazelcast-${_version}-sources.jar", summary:"Gretty Haselcast module $_version sources", labels:"Featured", verbose:"true")
+    }
 }
 
 task wrapper(type: Wrapper) {
