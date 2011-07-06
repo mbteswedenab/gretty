@@ -16,6 +16,8 @@
 
 
 
+
+
 dependencies {
     groovy group: 'org.codehaus.groovy', name: 'groovy', version: "1.8.0"
     compile group: 'org.mbte.groovypp', name: 'groovypp', version: "$gppVersion"
@@ -28,3 +30,8 @@ dependencies {
     testRuntime(group: 'commons-cli', name: 'commons-cli', version: '1.1')
 }
 
+task "fileMap"(type:JavaExec, dependsOn:'classes') {
+    main = "org.mbte.gretty.memserver.FileMap"
+    classpath =  sourceSets.main.runtimeClasspath
+    jvmArgs = ["-server",  "-Xmx4G"]
+}
