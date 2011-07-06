@@ -18,6 +18,8 @@
 
 
 
+
+
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -251,8 +253,8 @@ import java.util.concurrent.Semaphore
                     def key   = "${i}_key_${i}_key_${i}_key_${i}_key_${i}"
                     def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_"
                     keyDir.put(key.bytes, value.bytes)
-                    def get = keyDir.get(key.bytes)
-                    assert Arrays.equals(get, value.bytes)
+//                    def get = keyDir.get(key.bytes)
+//                    assert Arrays.equals(get, value.bytes)
                     if(!(j % 10000) && j) {
                         println "$j\t\t${(System.currentTimeMillis() - start) / j}"
                     }
