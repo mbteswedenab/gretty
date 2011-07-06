@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -251,7 +253,7 @@ import java.util.concurrent.Semaphore
                     keyDir.put(key.bytes, value.bytes)
                     def get = keyDir.get(key.bytes)
                     assert Arrays.equals(get, value.bytes)
-                    if(!(j % 1000) && j) {
+                    if(!(j % 10000) && j) {
                         println "$j\t\t${(System.currentTimeMillis() - start) / j}"
                     }
 
