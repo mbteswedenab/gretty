@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+
+
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -240,7 +242,7 @@ import java.util.concurrent.Semaphore
         for(k in 0..<64)
             executor.execute {
                 int j
-                while((j = counter.getAndIncrement()) < 1000000*1) {
+                while((j = counter.getAndIncrement()) < 1000000*10) {
                     semaphore.acquire()
 
                     def i = j % 1000000
@@ -263,7 +265,7 @@ import java.util.concurrent.Semaphore
         println(duration)
         println file.length()/(1024L*1024*duration)
 
-        for(j in (1000000*(1-1))..<(1000000*1)) {
+        for(j in (1000000*(10-1))..<(1000000*10)) {
             def i = j % 1000000
             def key   = "${i}_key_${i}_key_${i}_key_${i}_key_${i}"
             def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_"
