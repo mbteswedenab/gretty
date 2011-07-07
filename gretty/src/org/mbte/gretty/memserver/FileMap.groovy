@@ -123,8 +123,8 @@ import java.util.concurrent.TimeUnit
             }
 
             void setValue(byte [] value) {
-                setState(-1L)
                 this.value = value
+                setState(-1L)
                 segment.keyDir.writer.write(this)
 //                acquireSharedInterruptibly(0L)
 //                this.value = null
@@ -206,44 +206,44 @@ import java.util.concurrent.TimeUnit
 
         final void run () {
             def last = -1L
+            def arr = new ByteBuffer [3]
+            def bb = ByteBuffer.allocate(12)
+
             while(!executorService.isShutdown()) {
                 def acquire = semaphore.tryAcquire(250, TimeUnit.MILLISECONDS)
                 if(acquire) {
                     for (;;) {
                         def q = queue
                         if (queue.compareAndSet(q, busyEmptyQueue)) {
-                            def sz = 3*q.size
-                            def arr = new ByteBuffer [sz]
-
-                            def acc = FList.emptyList
-                            while(sz) {
+                            while(!q.empty) {
                                 KeyDir.Entry entry = q.head
-                                acc = acc + entry
+                                q = q.tail
 
-                                arr[--sz] = ByteBuffer.wrap(entry.value)
-                                arr[--sz] = ByteBuffer.wrap(entry.key)
-
-                                def bb = ByteBuffer.allocate(12)
+                                bb.limit(12)
+                                bb.position(0)
                                 bb.putInt(entry.hash)
                                 bb.putInt(entry.key.length)
                                 bb.putInt(entry.value.length)
                                 bb.flip()
-                                arr[--sz] = bb
-                                q = q.tail
-                            }
 
-                            writeFully(channel, arr)
+                                arr [0] = bb
+                                arr [1] = ByteBuffer.wrap(entry.key)
+                                arr [2] = ByteBuffer.wrap(entry.value)
 
-                            while(!acc.empty) {
-                                KeyDir.Entry entry = acc.head
+                                writeFully(channel, arr)
+
                                 def oldPos = curPos
                                 curPos = oldPos + 12 + entry.key.length + entry.value.length
-//                                entry.releaseShared(oldPos)
                                 entry.setOffset(oldPos)
-                                acc = acc.tail
+
+                                def millis = System.currentTimeMillis()
+                                if(millis - last > 1000) {
+                                    last = millis
+                                    channel.force(false)
+                                    println '*'
+                                }
                             }
 
-//                    println arr.length
 
                             if(!queue.compareAndSet(busyEmptyQueue, FList.emptyList)) {
                                 continue
@@ -254,13 +254,10 @@ import java.util.concurrent.TimeUnit
                 }
 
                 def millis = System.currentTimeMillis()
-                if(last == -1L && acquire) {
-                    last = millis
-                }
-
                 if(millis - last > 1000) {
                     last = millis
                     channel.force(false)
+                    println '*'
                 }
             }
         }
