@@ -16,6 +16,8 @@
 
 
 
+
+
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -124,7 +126,12 @@ import java.util.concurrent.TimeUnit
                 setState(-1L)
                 this.value = value
                 segment.keyDir.writer.write(this)
-                acquireSharedInterruptibly(0L)
+//                acquireSharedInterruptibly(0L)
+//                this.value = null
+            }
+
+            void setOffset(long offset) {
+                setState(offset)
                 this.value = null
             }
 
@@ -231,7 +238,8 @@ import java.util.concurrent.TimeUnit
                                 KeyDir.Entry entry = acc.head
                                 def oldPos = curPos
                                 curPos = oldPos + 12 + entry.key.length + entry.value.length
-                                entry.releaseShared(oldPos)
+//                                entry.releaseShared(oldPos)
+                                entry.setOffset(oldPos)
                                 acc = acc.tail
                             }
 
