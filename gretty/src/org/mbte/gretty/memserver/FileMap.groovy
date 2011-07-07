@@ -20,6 +20,8 @@
 
 
 
+
+
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -60,7 +62,7 @@ import java.util.concurrent.Semaphore
             return h;
         }
 
-        public Segment.Entry getOrPut(byte[] key, byte[] value) {
+        public Entry getOrPut(byte[] key, byte[] value) {
             int hash = hash(key);
             segmentFor(hash).getOrPut(key, hash, value);
         }
@@ -90,53 +92,53 @@ import java.util.concurrent.Semaphore
             protected Entry createEntry(byte[] key, int hash, byte[] value) {
                 return new Entry(hash: hash, segment: this, key: key, value: value)
             }
+        }
 
-            static class Entry extends AbstractQueuedLongSynchronizer implements AbstractConcurrentMap.Entry<byte[],byte[]> {
-                Segment segment
-                int hash
+        static class Entry extends AbstractQueuedLongSynchronizer implements AbstractConcurrentMap.Entry<byte[],byte[]> {
+            Segment segment
+            int hash
 
-                byte [] key, value
+            byte [] key, value
 
-                boolean isEqual(byte[] key, int hash) {
-                    this.hash == hash && Arrays.equals(this.key, key)
+            boolean isEqual(byte[] key, int hash) {
+                this.hash == hash && Arrays.equals(this.key, key)
+            }
+
+            boolean isValid() {
+                return true
+            }
+
+            byte [] getValue() {
+                if(value != null)
+                    value
+                else {
+                    def bb = ByteBuffer.allocate(12)
+                    readFully(segment.keyDir.writer.channel, bb, getState())
+                    bb.flip()
+                    bb.position(4)
+                    def ksz = bb.getInt()
+                    def vsz = bb.getInt()
+                    bb = ByteBuffer.allocate(vsz)
+                    readFully(segment.keyDir.writer.channel, bb, getState() + 12 + ksz)
+                    value = bb.array()
                 }
+            }
 
-                boolean isValid() {
-                    return true
-                }
+            void setValue(byte [] value) {
+                setState(-1L)
+                this.value = value
+                segment.keyDir.writer.write(this)
+                acquireSharedInterruptibly(0L)
+                this.value = null
+            }
 
-                byte [] getValue() {
-                    if(value != null)
-                        value
-                    else {
-                        def bb = ByteBuffer.allocate(12)
-                        readFully(segment.keyDir.writer.channel, bb, getState())
-                        bb.flip()
-                        bb.position(4)
-                        def ksz = bb.getInt()
-                        def vsz = bb.getInt()
-                        bb = ByteBuffer.allocate(vsz)
-                        segment.keyDir.writer.channel.read(bb, getState() + 12 + ksz)
-                        value = bb.array()
-                    }
-                }
+            protected long tryAcquireShared(long arg) {
+                getState() != -1L  ? 1 : -1
+            }
 
-                void setValue(byte [] value) {
-                    setState(-1L)
-                    this.value = value
-                    segment.keyDir.writer.write(this)
-                    acquireSharedInterruptibly(0L)
-                    this.value = null
-                }
-
-                protected long tryAcquireShared(long arg) {
-                    getState() != -1L  ? 1 : -1
-                }
-
-                protected boolean tryReleaseShared(long finalState) {
-                    setState(finalState)
-                    true
-                }
+            protected boolean tryReleaseShared(long finalState) {
+                setState(finalState)
+                true
             }
         }
     }
@@ -149,6 +151,13 @@ import java.util.concurrent.Semaphore
             }
             else
                 break
+        }
+    }
+
+    static void writeFully(FileChannel channel, ByteBuffer [] buffers) {
+        for(int i = 0; i != buffers.length; ++i) {
+            if(buffers[i].remaining())
+               channel.write(buffers, i, buffers.length-i)
         }
     }
 
@@ -172,7 +181,7 @@ import java.util.concurrent.Semaphore
             stream.close ()
         }
 
-        final void write(KeyDir.Segment.Entry entry) {
+        final void write(KeyDir.Entry entry) {
             for (;;) {
                 def oldQueue = queue
                 def newQueue = (oldQueue === busyEmptyQueue ? FList.emptyList : oldQueue)
@@ -196,7 +205,7 @@ import java.util.concurrent.Semaphore
 
                     def acc = FList.emptyList
                     while(sz) {
-                        KeyDir.Segment.Entry entry = q.head
+                        KeyDir.Entry entry = q.head
                         acc = acc + entry
 
                         arr[--sz] = ByteBuffer.wrap(entry.value)
@@ -211,10 +220,10 @@ import java.util.concurrent.Semaphore
                         q = q.tail
                     }
 
-                    channel.write(arr)
+                    writeFully(channel, arr)
 
                     while(!acc.empty) {
-                        KeyDir.Segment.Entry entry = acc.head
+                        KeyDir.Entry entry = acc.head
                         def oldPos = curPos
                         curPos = oldPos + 12 + entry.key.length + entry.value.length
                         entry.releaseShared(oldPos)
@@ -242,24 +251,19 @@ import java.util.concurrent.Semaphore
         def executor = Executors.newFixedThreadPool(64)
         AtomicInteger counter = []
         CountDownLatch cdl = [64]
-        Semaphore semaphore = [4]
         for(k in 0..<64)
             executor.execute {
                 int j
                 while((j = counter.getAndIncrement()) < 1000000*10) {
-                    semaphore.acquire()
-
                     def i = j % 1000000
                     def key   = "${i}_key_${i}_key_${i}_key_${i}_key_${i}"
                     def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_"
                     keyDir.put(key.bytes, value.bytes)
-//                    def get = keyDir.get(key.bytes)
-//                    assert Arrays.equals(get, value.bytes)
+                    def get = keyDir.get(key.bytes)
+                    assert Arrays.equals(get, value.bytes)
                     if(!(j % 10000) && j) {
                         println "$j\t\t${(System.currentTimeMillis() - start) / j}"
                     }
-
-                    semaphore.release()
                 }
                 cdl.countDown()
             }
