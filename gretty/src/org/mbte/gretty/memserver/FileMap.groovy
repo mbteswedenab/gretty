@@ -16,12 +16,6 @@
 
 
 
-
-
-
-
-
-
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -36,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import java.util.concurrent.locks.AbstractQueuedLongSynchronizer
 import java.util.concurrent.Semaphore
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.TimeUnit
 
 @Typed class FileMap {
     static class KeyDir extends AbstractConcurrentMap<byte[], byte[]> {
@@ -164,6 +160,8 @@ import java.util.concurrent.Semaphore
     static class Writer implements Runnable {
         private RandomAccessFile stream
         private FileChannel channel
+        private ExecutorService executorService = Executors.newSingleThreadExecutor()
+        private Semaphore semaphore = [0]
 
         protected volatile FList queue = FList.emptyList
 
@@ -174,9 +172,12 @@ import java.util.concurrent.Semaphore
         Writer (File file) {
             stream = new RandomAccessFile(file, "rw")
             channel = stream.channel
+
+            executorService.execute(this)
         }
 
         void close () {
+            executorService.shutdown()
             channel.force(false)
             stream.close ()
         }
@@ -188,7 +189,7 @@ import java.util.concurrent.Semaphore
                 newQueue = newQueue + entry
                 if (queue.compareAndSet(oldQueue, newQueue)) {
                     if(oldQueue.empty)
-                        executor.execute(this)
+                        semaphore.release()
                     return
                 }
             }
@@ -197,45 +198,61 @@ import java.util.concurrent.Semaphore
         long curPos
 
         final void run () {
-            for (;;) {
-                def q = queue
-                if (queue.compareAndSet(q, busyEmptyQueue)) {
-                    def sz = 3*q.size
-                    def arr = new ByteBuffer [sz]
+            def last = -1L
+            while(!executorService.isShutdown()) {
+                def acquire = semaphore.tryAcquire(250, TimeUnit.MILLISECONDS)
+                if(acquire) {
+                    for (;;) {
+                        def q = queue
+                        if (queue.compareAndSet(q, busyEmptyQueue)) {
+                            def sz = 3*q.size
+                            def arr = new ByteBuffer [sz]
 
-                    def acc = FList.emptyList
-                    while(sz) {
-                        KeyDir.Entry entry = q.head
-                        acc = acc + entry
+                            def acc = FList.emptyList
+                            while(sz) {
+                                KeyDir.Entry entry = q.head
+                                acc = acc + entry
 
-                        arr[--sz] = ByteBuffer.wrap(entry.value)
-                        arr[--sz] = ByteBuffer.wrap(entry.key)
+                                arr[--sz] = ByteBuffer.wrap(entry.value)
+                                arr[--sz] = ByteBuffer.wrap(entry.key)
 
-                        def bb = ByteBuffer.allocate(12)
-                        bb.putInt(entry.hash)
-                        bb.putInt(entry.key.length)
-                        bb.putInt(entry.value.length)
-                        bb.flip()
-                        arr[--sz] = bb
-                        q = q.tail
-                    }
+                                def bb = ByteBuffer.allocate(12)
+                                bb.putInt(entry.hash)
+                                bb.putInt(entry.key.length)
+                                bb.putInt(entry.value.length)
+                                bb.flip()
+                                arr[--sz] = bb
+                                q = q.tail
+                            }
 
-                    writeFully(channel, arr)
+                            writeFully(channel, arr)
 
-                    while(!acc.empty) {
-                        KeyDir.Entry entry = acc.head
-                        def oldPos = curPos
-                        curPos = oldPos + 12 + entry.key.length + entry.value.length
-                        entry.releaseShared(oldPos)
-                        acc = acc.tail
-                    }
+                            while(!acc.empty) {
+                                KeyDir.Entry entry = acc.head
+                                def oldPos = curPos
+                                curPos = oldPos + 12 + entry.key.length + entry.value.length
+                                entry.releaseShared(oldPos)
+                                acc = acc.tail
+                            }
 
 //                    println arr.length
 
-                    if(!queue.compareAndSet(busyEmptyQueue, FList.emptyList)) {
-                        continue
+                            if(!queue.compareAndSet(busyEmptyQueue, FList.emptyList)) {
+                                continue
+                            }
+                            break
+                        }
                     }
-                    break
+                }
+
+                def millis = System.currentTimeMillis()
+                if(last == -1L && acquire) {
+                    last = millis
+                }
+
+                if(millis - last > 1000) {
+                    last = millis
+                    channel.force(false)
                 }
             }
         }
