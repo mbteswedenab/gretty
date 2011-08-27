@@ -14,8 +14,6 @@
  *  limitations under the License.
  */
 
-
-
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.channel.*
@@ -34,6 +32,7 @@ import org.mbte.gretty.httpserver.session.GrettyInMemorySessionManager
 import org.jboss.netty.logging.InternalLoggerFactory
 import org.jboss.netty.logging.InternalLogger
 import org.mbte.gretty.httpclient.HttpRequestHelper
+import org.jboss.netty.handler.codec.http.HttpChunkAggregator
 
 @Typed class GrettyServer extends AbstractServer<GrettyServer> implements HttpRequestHelper {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(GrettyServer)
@@ -183,9 +182,11 @@ import org.mbte.gretty.httpclient.HttpRequestHelper
         pipeline.addLast("flash.policy.file", new FlashPolicyFileHandler(this))
 
         pipeline.addLast("http.request.decoder", new GrettyRequestDecoder())
-        pipeline.addLast("http.response.encoder", new GrettyResponseEncoder())
+        pipeline.addLast("http.request.aggregator", new HttpChunkAggregator(Integer.MAX_VALUE))
 
         pipeline.addLast("chunkedWriter", new ChunkedWriteHandler())
+        pipeline.addLast("http.response.encoder", new GrettyResponseEncoder())
+
         pipeline.addLast("fileWriter", new FileWriteHandler())
 
         pipeline.addLast("http.application", new GrettyAppHandler(this))

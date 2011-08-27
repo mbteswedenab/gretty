@@ -14,7 +14,6 @@
  *  limitations under the License.
  */
 
-
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.stream.ChunkedStream
@@ -27,6 +26,10 @@ import org.jboss.netty.handler.codec.http.DefaultHttpChunk
 
     HttpChunkedStream(InputStream is) {
         super(is)
+    }
+
+    HttpChunkedStream(InputStream is, int chunkSize) {
+        super(is, chunkSize)
     }
 
     boolean hasNextChunk() {

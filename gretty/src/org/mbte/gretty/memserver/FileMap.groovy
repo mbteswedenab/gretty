@@ -16,8 +16,6 @@
 
 
 
-
-
 package org.mbte.gretty.memserver
 
 import java.nio.channels.FileChannel
@@ -34,19 +32,30 @@ import java.util.concurrent.locks.AbstractQueuedLongSynchronizer
 import java.util.concurrent.Semaphore
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.TimeUnit
+import groovypp.concurrent.BindLater
+import java.util.concurrent.locks.ReentrantLock
+import groovypp.concurrent.FQueue
+import org.mbte.gretty.memserver.FileMap.KeyDir.Entry
+import java.util.concurrent.locks.LockSupport
+import java.util.concurrent.locks.AbstractQueuedSynchronizer
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.locks.ReadWriteLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import apple.laf.JRSUIConstants.Size
+import java.util.concurrent.atomic.AtomicLong
+import java.nio.channels.Channel
 
 @Typed class FileMap {
     static class KeyDir extends AbstractConcurrentMap<byte[], byte[]> {
+        Writer writer = []
 
-        Writer writer
-
-        KeyDir (File file, Executor executor) {
+        KeyDir (File file) {
             super(null)
-            writer = [file]
-            writer.executor = executor
+            writer.open (file)
         }
 
-        public byte[] get(byte[] key) {
+        byte[] get(byte[] key) {
             int hash = hash(key);
             segmentFor(hash).get(key, hash);
         }
@@ -60,17 +69,36 @@ import java.util.concurrent.TimeUnit
             return h;
         }
 
-        public Entry getOrPut(byte[] key, byte[] value) {
+        Entry getOrPut(byte[] key, byte[] value) {
             int hash = hash(key);
             segmentFor(hash).getOrPut(key, hash, value);
         }
 
-        public void put(byte[] key, byte[] value) {
+        void put(byte[] key, byte[] value) {
             int hash = hash(key);
-            segmentFor(hash).put(key, hash, value);
+            KeyDir.Segment segment = segmentFor(hash)
+
+            def wsize = 12 + key.length + value.length
+            def out = ByteBuffer.allocate(wsize)
+
+            out.position(0)
+            out.limit(wsize)
+
+            out.putInt(hash).
+                putInt(key.length).
+                putInt(value.length).
+                put(key).
+                put(value)
+            out.flip()
+
+            def offset = writer.write(out)
+
+            Entry e = segment.put(key, hash, value)
+            e.offset = offset
+            e.value = null
         }
 
-        public void remove(byte[] key) {
+        void remove(byte[] key) {
             int hash = hash(key);
             segmentFor(hash).remove(key, hash);
         }
@@ -82,6 +110,8 @@ import java.util.concurrent.TimeUnit
         public static class Segment extends AbstractConcurrentMap.Segment<byte[],byte[]>{
             KeyDir keyDir
 
+            protected ByteBuffer out = ByteBuffer.allocate(64*1024)
+
             public Segment(KeyDir keyDir, int cap) {
                 super(cap)
                 this.keyDir = keyDir
@@ -92,9 +122,10 @@ import java.util.concurrent.TimeUnit
             }
         }
 
-        static class Entry extends AbstractQueuedLongSynchronizer implements AbstractConcurrentMap.Entry<byte[],byte[]> {
+        static class Entry implements AbstractConcurrentMap.Entry<byte[],byte[]> {
             Segment segment
-            int hash
+            int hash, valueSize
+            long offset
 
             byte [] key, value
 
@@ -110,73 +141,49 @@ import java.util.concurrent.TimeUnit
                 if(value != null)
                     value
                 else {
-                    def bb = ByteBuffer.allocate(12)
-                    readFully(segment.keyDir.writer.channel, bb, getState())
-                    bb.flip()
-                    bb.position(4)
-                    def ksz = bb.getInt()
-                    def vsz = bb.getInt()
-                    bb = ByteBuffer.allocate(vsz)
-                    readFully(segment.keyDir.writer.channel, bb, getState() + 12 + ksz)
+                    def bb = ByteBuffer.allocate(valueSize)
+                    readFully(segment.keyDir.writer.channel, bb, offset + 12 + key.length)
                     value = bb.array()
                 }
             }
 
-            void setValue(byte [] value) {
-                this.value = value
-                setState(-1L)
-                segment.keyDir.writer.write(this)
-//                acquireSharedInterruptibly(0L)
-//                this.value = null
-            }
-
-            void setOffset(long offset) {
-                setState(offset)
-                this.value = null
-            }
-
-            protected long tryAcquireShared(long arg) {
-                getState() != -1L  ? 1 : -1
-            }
-
-            protected boolean tryReleaseShared(long finalState) {
-                setState(finalState)
-                true
+            void setValue(byte [] avalue) {
+                this.value = avalue
+                if(avalue != null)
+                    valueSize = avalue.length
             }
         }
     }
 
     static void readFully(FileChannel channel, ByteBuffer buffer, long from) {
-        for(;;) {
-            def read = channel.read(buffer, from)
-            if(buffer.remaining()) {
-                from += read
-            }
-            else
-                break
+        while(buffer.remaining()) {
+            from += channel.read(buffer, from)
         }
     }
 
     static void writeFully(FileChannel channel, ByteBuffer [] buffers) {
-        for(int i = 0; i != buffers.length; ++i) {
+        writeFully(channel, buffers, 0, buffers.length)
+    }
+
+    static void writeFully(FileChannel channel, ByteBuffer [] buffers, int from, int to) {
+        for(int i = from; i != to; ++i) {
             if(buffers[i].remaining())
-               channel.write(buffers, i, buffers.length-i)
+               channel.write(buffers, i, to-i)
         }
     }
 
-    static class Writer implements Runnable {
+    static void writeFully(FileChannel channel, ByteBuffer buffer) {
+        while(buffer.remaining()) {
+           channel.write(buffer)
+        }
+    }
+
+    abstract static class AbstractFileWriter implements Runnable {
         private RandomAccessFile stream
         private FileChannel channel
         private ExecutorService executorService = Executors.newSingleThreadExecutor()
-        private Semaphore semaphore = [0]
 
-        protected volatile FList queue = FList.emptyList
-
-        Executor executor
-
-        protected static final FList busyEmptyQueue = FList.emptyList + null
-
-        Writer (File file) {
+        void open (File file) {
             stream = new RandomAccessFile(file, "rw")
             channel = stream.channel
 
@@ -189,74 +196,44 @@ import java.util.concurrent.TimeUnit
             stream.close ()
         }
 
-        final void write(KeyDir.Entry entry) {
-            for (;;) {
-                def oldQueue = queue
-                def newQueue = (oldQueue === busyEmptyQueue ? FList.emptyList : oldQueue)
-                newQueue = newQueue + entry
-                if (queue.compareAndSet(oldQueue, newQueue)) {
-                    if(oldQueue.empty)
-                        semaphore.release()
-                    return
-                }
-            }
-        }
+        abstract long write(ByteBuffer buffer)
+    }
 
-        long curPos
+    static class Writer extends AbstractFileWriter implements Runnable {
+        private AtomicLong pos = []
+        private ReentrantReadWriteLock lock = [true]
+
+        long write(ByteBuffer out) {
+            def wsize = out.remaining()
+            def offset = pos.addAndGet(wsize) - wsize
+            lock.readLock().lock()
+            try {
+                def written = offset
+                while(out.hasRemaining())
+                    written += channel.write(out, written)
+            }
+            finally {
+                lock.readLock().unlock()
+            }
+            offset
+        }
 
         final void run () {
             def last = -1L
-            def arr = new ByteBuffer [3]
-            def bb = ByteBuffer.allocate(12)
 
             while(!executorService.isShutdown()) {
-                def acquire = semaphore.tryAcquire(250, TimeUnit.MILLISECONDS)
-                if(acquire) {
-                    for (;;) {
-                        def q = queue
-                        if (queue.compareAndSet(q, busyEmptyQueue)) {
-                            while(!q.empty) {
-                                KeyDir.Entry entry = q.head
-                                q = q.tail
-
-                                bb.limit(12)
-                                bb.position(0)
-                                bb.putInt(entry.hash)
-                                bb.putInt(entry.key.length)
-                                bb.putInt(entry.value.length)
-                                bb.flip()
-
-                                arr [0] = bb
-                                arr [1] = ByteBuffer.wrap(entry.key)
-                                arr [2] = ByteBuffer.wrap(entry.value)
-
-                                writeFully(channel, arr)
-
-                                def oldPos = curPos
-                                curPos = oldPos + 12 + entry.key.length + entry.value.length
-                                entry.setOffset(oldPos)
-
-                                def millis = System.currentTimeMillis()
-                                if(millis - last > 1000) {
-                                    last = millis
-                                    channel.force(false)
-                                    println '*'
-                                }
-                            }
-
-
-                            if(!queue.compareAndSet(busyEmptyQueue, FList.emptyList)) {
-                                continue
-                            }
-                            break
-                        }
-                    }
-                }
-
+                Thread.sleep(250)
                 def millis = System.currentTimeMillis()
                 if(millis - last > 1000) {
-                    last = millis
-                    channel.force(false)
+                    lock.writeLock().lock()
+                    try {
+                        if(channel.open)
+                            channel.force(false)
+                    }
+                    finally {
+                        lock.writeLock().unlock()
+                    }
+                    last = System.currentTimeMillis()
                     println '*'
                 }
             }
@@ -265,26 +242,30 @@ import java.util.concurrent.TimeUnit
 
     public static void main(String[] args) {
         def file = File.createTempFile("aaa", "bbb")
+        println file
 
-        KeyDir keyDir = [file, Executors.newSingleThreadExecutor()]
+        KeyDir keyDir = [file]
 
         def start = System.currentTimeMillis()
 
-        def executor = Executors.newFixedThreadPool(64)
+        def threadCount = 6
+        def executor = Executors.newFixedThreadPool(threadCount)
+        CountDownLatch cdl = [threadCount]
         AtomicInteger counter = []
-        CountDownLatch cdl = [64]
-        for(k in 0..<64)
+        for(k in 0..<threadCount)
             executor.execute {
                 int j
                 while((j = counter.getAndIncrement()) < 1000000*10) {
                     def i = j % 1000000
-                    def key   = "${i}_key_${i}_key_${i}_key_${i}_key_${i}"
-                    def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_"
-                    keyDir.put(key.bytes, value.bytes)
-                    def get = keyDir.get(key.bytes)
-                    assert Arrays.equals(get, value.bytes)
+                    def key   = "${i}_key_${i}_key_${i}_key_${i}_key_${i}".bytes
+                    def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_".bytes
+//                    def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_".bytes
+//                    def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_".bytes
+//                    def value   = new byte [64]
+
+                    keyDir.put(key, value)
                     if(!(j % 10000) && j) {
-                        println "$j\t\t${(System.currentTimeMillis() - start) / j}"
+                        println "$j\t\t${(System.currentTimeMillis() - start) / j}ms/op\t${(j * 1000L) / (System.currentTimeMillis() - start)}op/sec"
                     }
                 }
                 cdl.countDown()
@@ -292,8 +273,8 @@ import java.util.concurrent.TimeUnit
 
         cdl.await()
         def duration = (System.currentTimeMillis() - start) / 1000
-        println(duration)
-        println file.length()/(1024L*1024*duration)
+        println "${duration}sec"
+        println "${file.length()/(1024L*1024*duration)}Mb/sec"
 
         for(j in (1000000*(10-1))..<(1000000*10)) {
             def i = j % 1000000
@@ -301,13 +282,14 @@ import java.util.concurrent.TimeUnit
             def value   = "${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_${j}_key_"
             def get = keyDir.get(key.bytes)
             assert Arrays.equals(get, value.bytes)
+            if(i % 10000 == 0)
+                println i
         }
 //        cdl.await()
         duration = (System.currentTimeMillis() - start) / 1000
         println(duration)
-//        writer.close()
-//        ((ExecutorService)writer.executor).shutdown ()
-        println file.length()/(1024L*1024*duration)
+        keyDir.writer.close()
+        executor.shutdown()
         println file
         file.delete()
     }

@@ -14,10 +14,6 @@
  *  limitations under the License.
  */
 
-
-
-
-
 package org.mbte.gretty.httpserver
 
 import org.jboss.netty.handler.codec.http.HttpResponseStatus
@@ -137,9 +133,7 @@ class GrettyHttpResponse extends DefaultHttpResponse {
             break
 
             case InputStream:
-                def bytes = obj.bytes
-                setHeader(HttpHeaders.Names.CONTENT_LENGTH, bytes.length)
-                this.responseBody = ChannelBuffers.wrappedBuffer(bytes)
+                this.responseBody = new HttpChunkedStream(obj)
             break
 
             default:
