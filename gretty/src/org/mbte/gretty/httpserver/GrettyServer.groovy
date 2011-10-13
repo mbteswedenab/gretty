@@ -204,7 +204,7 @@ import org.jboss.netty.handler.codec.http.HttpChunkAggregator
             def property = mc.getMetaProperty(e.key)
             if(!property && e.value instanceof Closure) {
                 setUnresolvedProperty(e.key, GrettyRestDescription.fromClosure((Closure)e.value))
-                return
+                continue
             }
 
             if(e.value instanceof GeneratedClosure) {
